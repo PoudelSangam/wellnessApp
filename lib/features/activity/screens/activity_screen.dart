@@ -23,7 +23,9 @@ class _ActivityScreenState extends State<ActivityScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadActivities();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadActivities();
+    });
   }
 
   @override
@@ -127,6 +129,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                     intensity: provider.physicalProgram!['intensity'],
                     icon: Icons.fitness_center,
                     color: AppTheme.primaryColor,
+                    programType: 'physical',
                   ),
                 
                 const SizedBox(height: 16),
@@ -142,6 +145,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                     focus: provider.mentalProgram!['focus'],
                     icon: Icons.psychology,
                     color: Colors.purple,
+                    programType: 'mental',
                   ),
                 
                 const SizedBox(height: 16),

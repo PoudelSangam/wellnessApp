@@ -39,6 +39,9 @@ dependencies:
   # JSON Serialization
   json_annotation: ^4.8.1
   
+  # Internationalization
+  intl: ^0.18.1
+  
   # Loading Indicators
   shimmer: ^3.0.0
   

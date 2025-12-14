@@ -135,13 +135,20 @@ class ApiService {
   // Handle Response
   Map<String, dynamic> _handleResponse(http.Response response) {
     Logger.info('Response Status: ${response.statusCode}');
-    Logger.debug('Response Body: ${response.body}');
+    Logger.info('Response Body (first 500 chars): ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
     
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) {
         return {'success': true};
       }
-      return jsonDecode(response.body);
+      
+      try {
+        return jsonDecode(response.body);
+      } catch (e) {
+        Logger.error('JSON Decode Error: $e');
+        Logger.error('Full Response Body: ${response.body}');
+        throw ApiException('Invalid response format from server', response.statusCode);
+      }
     } else if (response.statusCode == 401) {
       throw ApiException('Unauthorized', 401);
     } else if (response.statusCode == 403) {

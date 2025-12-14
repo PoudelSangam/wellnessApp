@@ -10,6 +10,7 @@ import '../../features/activity/screens/activity_detail_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/splash/screens/splash_screen.dart';
+import '../widgets/main_navigation.dart';
 
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
@@ -30,7 +31,7 @@ class AppRouter {
         }
         
         if (isLoggedIn && (isLoggingIn || isSigningUp)) {
-          return '/home';
+          return '/';
         }
         
         return null;
@@ -48,6 +49,23 @@ class AppRouter {
         GoRoute(
           path: '/signup',
           builder: (context, state) => const SignupScreen(),
+        ),
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const MainNavigation(),
+          routes: [
+            GoRoute(
+              path: 'activity/detail/:id',
+              builder: (context, state) {
+                final id = state.pathParameters['id']!;
+                return ActivityDetailScreen(activityId: id);
+              },
+            ),
+            GoRoute(
+              path: 'profile/edit',
+              builder: (context, state) => const EditProfileScreen(),
+            ),
+          ],
         ),
         GoRoute(
           path: '/home',

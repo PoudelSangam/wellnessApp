@@ -7,6 +7,8 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/activity/providers/activity_provider.dart';
 import 'features/profile/providers/profile_provider.dart';
 import 'features/dashboard/providers/dashboard_provider.dart';
+import 'features/notifications/providers/notification_provider.dart';
+import 'features/stats/providers/stats_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +39,12 @@ class MyApp extends StatelessWidget {
           create: (_) => DashboardProvider(),
           update: (_, auth, previous) =>
               previous ?? DashboardProvider()..updateAuth(auth),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => StatsProvider(),
         ),
       ],
       child: Consumer<AuthProvider>(

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/main_navigation.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../activity/providers/activity_provider.dart';
+import '../../notifications/providers/notification_provider.dart';
 import '../widgets/wellness_summary_card.dart';
 import '../widgets/progress_card.dart';
 import '../widgets/recommended_activity_card.dart';
@@ -21,7 +23,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
@@ -59,10 +63,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // TODO: Navigate to notifications
+          Consumer<NotificationProvider>(
+            builder: (context, provider, _) {
+              final unreadCount = provider.unreadCount;
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: unreadCount > 0,
+                  label: Text(unreadCount.toString()),
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+                onPressed: () {
+                  // Navigate to notifications tab (index 3)
+                  MainNavigation.of(context)?.navigateToTab(3);
+                },
+              );
             },
           ),
         ],
@@ -145,6 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 intensity: activityProvider.physicalProgram!['intensity'],
                                 icon: Icons.fitness_center,
                                 color: AppTheme.primaryColor,
+                                programType: 'physical',
                               ),
                             
                             const SizedBox(height: 16),
@@ -160,6 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 focus: activityProvider.mentalProgram!['focus'],
                                 icon: Icons.psychology,
                                 color: Colors.purple,
+                                programType: 'mental',
                               ),
                           ],
                         );
