@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/main_navigation.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../activity/providers/activity_provider.dart';
@@ -73,8 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: const Icon(Icons.notifications_outlined),
                 ),
                 onPressed: () {
-                  // Navigate to notifications tab (index 3)
-                  MainNavigation.of(context)?.navigateToTab(3);
+                  context.go('/notifications');
                 },
               );
             },

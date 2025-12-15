@@ -3,10 +3,11 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
-import '../../features/home/screens/home_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/activity/screens/activity_screen.dart';
 import '../../features/activity/screens/activity_detail_screen.dart';
+import '../../features/stats/screens/stats_screen.dart';
+import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/splash/screens/splash_screen.dart';
@@ -50,34 +51,20 @@ class AppRouter {
           path: '/signup',
           builder: (context, state) => const SignupScreen(),
         ),
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const MainNavigation(),
+        ShellRoute(
+          builder: (context, state, child) => MainNavigation(child: child),
           routes: [
             GoRoute(
-              path: 'activity/detail/:id',
-              builder: (context, state) {
-                final id = state.pathParameters['id']!;
-                return ActivityDetailScreen(activityId: id);
-              },
+              path: '/home',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: DashboardScreen(),
+              ),
             ),
             GoRoute(
-              path: 'profile/edit',
-              builder: (context, state) => const EditProfileScreen(),
-            ),
-          ],
-        ),
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomeScreen(),
-          routes: [
-            GoRoute(
-              path: 'dashboard',
-              builder: (context, state) => const DashboardScreen(),
-            ),
-            GoRoute(
-              path: 'activity',
-              builder: (context, state) => const ActivityScreen(),
+              path: '/activity',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: ActivityScreen(),
+              ),
               routes: [
                 GoRoute(
                   path: 'detail/:id',
@@ -89,8 +76,22 @@ class AppRouter {
               ],
             ),
             GoRoute(
-              path: 'profile',
-              builder: (context, state) => const ProfileScreen(),
+              path: '/stats',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: StatsScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/notifications',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: NotificationsScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/profile',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: ProfileScreen(),
+              ),
               routes: [
                 GoRoute(
                   path: 'edit',
