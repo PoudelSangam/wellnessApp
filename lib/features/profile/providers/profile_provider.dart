@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/utils/logger.dart';
@@ -39,12 +40,13 @@ class ProfileProvider extends ChangeNotifier {
       _setLoading(false);
       Logger.success('Profile updated');
       return true;
-    } on ApiException catch (e) {
-      if (e.statusCode == 401) {
+    } on DioException catch (e) {
+      final apiException = e.error is ApiException ? e.error as ApiException : null;
+      if (apiException?.statusCode == 401 || e.response?.statusCode == 401) {
         await _authProvider?.refreshAccessToken();
         return await updateProfile(userData);
       } else {
-        _handleError(e);
+        _handleError(apiException ?? e);
         return false;
       }
     } catch (e) {
@@ -69,8 +71,9 @@ class ProfileProvider extends ChangeNotifier {
       _setLoading(false);
       Logger.success('Account deleted');
       return true;
-    } on ApiException catch (e) {
-      _handleError(e);
+    } on DioException catch (e) {
+      final apiException = e.error is ApiException ? e.error as ApiException : null;
+      _handleError(apiException ?? e);
       return false;
     } catch (e) {
       _handleError(e);

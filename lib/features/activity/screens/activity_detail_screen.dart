@@ -5,6 +5,8 @@ import '../../auth/widgets/custom_button.dart';
 import '../providers/activity_provider.dart';
 import '../models/activity_model.dart';
 import '../widgets/exercise_animation_widget.dart';
+import '../widgets/motivation_dialog.dart';
+import 'workout_session_screen.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final String activityId;
@@ -31,29 +33,49 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _handleComplete() async {
-    final activityProvider = context.read<ActivityProvider>();
-    final success = await activityProvider.completeActivity(widget.activityId);
+    // Show motivation dialog
+    showDialog(
+      context: context,
+      builder: (context) => MotivationDialog(
+        onComplete: (motivation) async {
+          int? activityId = int.tryParse(widget.activityId);
+          
+          bool success;
+          if (activityId != null) {
+            final activityProvider = context.read<ActivityProvider>();
+            success = await activityProvider.completeActivityWithMotivation(
+              activityId,
+              motivation,
+            );
+          } else {
+            final activityProvider = context.read<ActivityProvider>();
+            success = await activityProvider.completeActivity(widget.activityId);
+          }
 
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Activity completed! Great job! 🎉'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        Navigator.of(context).pop();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              activityProvider.errorMessage ?? 'Failed to complete activity',
-            ),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
-    }
+          if (mounted) {
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Activity completed! Motivation: $motivation 🎉'),
+                  backgroundColor: AppTheme.successColor,
+                ),
+              );
+              Navigator.of(context).pop();
+            } else {
+              final activityProvider = context.read<ActivityProvider>();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    activityProvider.errorMessage ?? 'Failed to complete activity',
+                  ),
+                  backgroundColor: AppTheme.errorColor,
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
   }
 
   Color _getCategoryColor(String category) {
@@ -270,13 +292,46 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Complete Button
+                      // Start Workout Button
                       CustomButton(
-                        onPressed: provider.isLoading ? null : _handleComplete,
-                        isLoading: provider.isLoading,
-                        text: 'Complete Activity',
-                        icon: Icons.check_circle,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => WorkoutSessionScreen(
+                                activity: activity,
+                              ),
+                            ),
+                          );
+                        },
+                        text: 'Start Workout',
+                        icon: Icons.play_circle_filled,
                         backgroundColor: categoryColor,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Quick Complete Button
+                      OutlinedButton.icon(
+                        onPressed: provider.isLoading ? null : _handleComplete,
+                        icon: provider.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.check_circle_outline),
+                        label: const Text('Mark as Complete'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: categoryColor,
+                          side: BorderSide(color: categoryColor),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
 
                       const SizedBox(height: 20),

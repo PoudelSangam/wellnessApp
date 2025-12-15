@@ -52,7 +52,7 @@ class RecommendedActivityCard extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: () {
-          context.push('/home/activity/detail/${activity.id}');
+          context.push('/activity/detail/${activity.id}');
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(

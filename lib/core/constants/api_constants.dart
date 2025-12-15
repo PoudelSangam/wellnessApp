@@ -15,9 +15,11 @@ class ApiConstants {
   
   // Workout Endpoints
   static const String workoutRecommend = '/api/workout/recommend/';
+  static const String dailyActivityRecommend = '/api/workout/activity/recommended/';
   static const String activityList = '/api/activities/';
   static const String activityDetail = '/api/activities/';
   static const String completeActivity = '/api/activities/complete/';
+  static const String completeWorkoutActivity = '/api/workout/activity/'; // {id}/complete/
   
   // Progress Endpoints
   static const String progressHistory = '/api/progress/history/';

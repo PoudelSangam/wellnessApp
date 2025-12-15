@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/storage_service.dart';
@@ -76,10 +77,11 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       Logger.success('Login successful');
       return true;
-    } on ApiException catch (e) {
-      _errorMessage = e.message;
+    } on DioException catch (e) {
+      final apiException = e.error is ApiException ? e.error as ApiException : null;
+      _errorMessage = apiException?.message ?? 'Login failed. Please try again.';
       _setLoading(false);
-      Logger.error('Login failed: ${e.message}');
+      Logger.error('Login failed: ${_errorMessage}');
       return false;
     } catch (e) {
       _errorMessage = 'An unexpected error occurred';
@@ -117,10 +119,11 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       Logger.success('Signup successful');
       return true;
-    } on ApiException catch (e) {
-      _errorMessage = e.message;
+    } on DioException catch (e) {
+      final apiException = e.error is ApiException ? e.error as ApiException : null;
+      _errorMessage = apiException?.message ?? 'Signup failed. Please try again.';
       _setLoading(false);
-      Logger.error('Signup failed: ${e.message}');
+      Logger.error('Signup failed: ${_errorMessage}');
       return false;
     } catch (e) {
       _errorMessage = 'An unexpected error occurred';
@@ -141,12 +144,13 @@ class AuthProvider extends ChangeNotifier {
       _user = UserModel.fromJson(response);
       notifyListeners();
       Logger.success('User profile fetched');
-    } on ApiException catch (e) {
-      if (e.statusCode == 401) {
+    } on DioException catch (e) {
+      final apiException = e.error is ApiException ? e.error as ApiException : null;
+      if (apiException?.statusCode == 401 || e.response?.statusCode == 401) {
         await refreshAccessToken();
         await fetchUserProfile();
       } else {
-        Logger.error('Fetch profile failed: ${e.message}');
+        Logger.error('Fetch profile failed: ${apiException?.message ?? e.toString()}');
       }
     } catch (e) {
       Logger.error('Fetch profile error: $e');
@@ -172,8 +176,9 @@ class AuthProvider extends ChangeNotifier {
       
       Logger.success('Token refreshed');
       return true;
-    } on ApiException catch (e) {
-      Logger.error('Token refresh failed: ${e.message}');
+    } on DioException catch (e) {
+      final apiException = e.error is ApiException ? e.error as ApiException : null;
+      Logger.error('Token refresh failed: ${apiException?.message ?? e.toString()}');
       await logout();
       return false;
     } catch (e) {

@@ -34,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     
     await Future.wait([
       dashboardProvider.fetchDashboardData(),
-      activityProvider.fetchRecommendations(),
+      activityProvider.fetchDailyRecommendations(), // Use new daily recommendations
     ]);
   }
 
@@ -122,7 +122,167 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                       }
 
-                      // Show message if exists
+                      final dailyRec = activityProvider.dailyRecommendation;
+
+                      // Show daily recommendation info if available
+                      if (dailyRec != null) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Recommendation Header Card
+                            Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      AppTheme.primaryColor.withOpacity(0.1),
+                                      AppTheme.secondaryColor.withOpacity(0.1),
+                                    ],
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.auto_awesome,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                dailyRec.rlActionName,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppTheme.primaryColor,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                dailyRec.userSegment,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.lightbulb_outline,
+                                            color: AppTheme.accentColor,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              dailyRec.reason,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                      children: [
+                                        _buildStatChip(
+                                          Icons.fitness_center,
+                                          '${dailyRec.totalActivities} Activities',
+                                          AppTheme.primaryColor,
+                                        ),
+                                        _buildStatChip(
+                                          Icons.trending_up,
+                                          '${(dailyRec.userEngagement * 100).toInt()}% Engaged',
+                                          AppTheme.successColor,
+                                        ),
+                                        _buildStatChip(
+                                          Icons.favorite,
+                                          'Level ${dailyRec.userMotivation}',
+                                          AppTheme.errorColor,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 16),
+
+                            // Recommended Activities List
+                            if (activityProvider.recommendedActivities.isNotEmpty)
+                              ...activityProvider.recommendedActivities.map((activity) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: RecommendedActivityCard(activity: activity),
+                                );
+                              }),
+
+                            if (activityProvider.recommendedActivities.isEmpty)
+                              Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: Center(
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle_outline,
+                                          size: 48,
+                                          color: Colors.grey[400],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'No activities for today',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      }
+
+                      // Fallback to old recommendation message
                       if (activityProvider.recommendationMessage != null) {
                         return Column(
                           children: [
@@ -235,6 +395,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatChip(IconData icon, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

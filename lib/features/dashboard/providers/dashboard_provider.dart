@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/utils/logger.dart';
@@ -56,12 +57,13 @@ class DashboardProvider extends ChangeNotifier {
       
       _setLoading(false);
       Logger.success('Dashboard data fetched');
-    } on ApiException catch (e) {
-      if (e.statusCode == 401) {
+    } on DioException catch (e) {
+      final apiException = e.error is ApiException ? e.error as ApiException : null;
+      if (apiException?.statusCode == 401 || e.response?.statusCode == 401) {
         await _authProvider?.refreshAccessToken();
         await fetchDashboardData();
       } else {
-        _handleError(e);
+        _handleError(apiException ?? e);
       }
     } catch (e) {
       _handleError(e);

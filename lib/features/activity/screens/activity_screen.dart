@@ -38,7 +38,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     final activityProvider = context.read<ActivityProvider>();
     await Future.wait([
       activityProvider.fetchActivities(),
-      activityProvider.fetchRecommendations(),
+      activityProvider.fetchWorkoutRecommendation(), // Use new workout recommendation
       activityProvider.fetchCompletedActivities(),
     ]);
   }
@@ -86,47 +86,144 @@ class _ActivityScreenState extends State<ActivityScreen>
       onRefresh: _handleRefresh,
       child: Consumer<ActivityProvider>(
         builder: (context, provider, _) {
-          if (provider.isLoading && provider.recommendedActivities.isEmpty) {
+          if (provider.isLoading && provider.workoutRecommendation == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          final workoutRec = provider.workoutRecommendation;
+
           // Show workout recommendation if exists
-          if (provider.physicalProgram != null || provider.mentalProgram != null) {
+          if (workoutRec != null) {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Info message
-                if (provider.recommendationMessage != null && provider.recommendationMessage!.isNotEmpty)
-                  Card(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, color: AppTheme.primaryColor),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              provider.recommendationMessage!,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
+                // Recommendation Header Card
+                Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primaryColor.withOpacity(0.15),
+                          AppTheme.secondaryColor.withOpacity(0.15),
                         ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
                     ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.auto_awesome,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'AI-Powered Recommendation',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    workoutRec.rlAction,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                color: AppTheme.accentColor,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  workoutRec.userSegment,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildScoreCard(
+                                'Engagement',
+                                '${(workoutRec.engagementScore * 100).toInt()}%',
+                                Icons.trending_up,
+                                AppTheme.successColor,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildScoreCard(
+                                'Motivation',
+                                'Level ${workoutRec.motivationScore}',
+                                Icons.favorite,
+                                AppTheme.errorColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
+                ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 
                 // Physical Program
-                if (provider.physicalProgram != null)
+                if (workoutRec.physicalProgram != null)
                   ProgramCard(
-                    title: provider.physicalProgram!['name'] ?? 'Physical Program',
-                    description: provider.physicalProgram!['description'] ?? '',
-                    items: (provider.physicalProgram!['exercises'] as List?)?.cast<String>() ?? [],
-                    duration: provider.physicalProgram!['duration'] ?? 'N/A',
-                    frequency: provider.physicalProgram!['frequency'] ?? 'N/A',
-                    intensity: provider.physicalProgram!['intensity'],
+                    title: workoutRec.physicalProgram!.name,
+                    description: workoutRec.physicalProgram!.description,
+                    items: workoutRec.physicalProgram!.exercises,
+                    duration: workoutRec.physicalProgram!.duration,
+                    frequency: workoutRec.physicalProgram!.frequency,
+                    intensity: workoutRec.physicalProgram!.intensity,
                     icon: Icons.fitness_center,
                     color: AppTheme.primaryColor,
                     programType: 'physical',
@@ -135,14 +232,13 @@ class _ActivityScreenState extends State<ActivityScreen>
                 const SizedBox(height: 16),
                 
                 // Mental Program
-                if (provider.mentalProgram != null)
+                if (workoutRec.mentalProgram != null)
                   ProgramCard(
-                    title: provider.mentalProgram!['name'] ?? 'Mental Program',
-                    description: provider.mentalProgram!['description'] ?? '',
-                    items: (provider.mentalProgram!['activities'] as List?)?.cast<String>() ?? [],
-                    duration: provider.mentalProgram!['duration'] ?? 'N/A',
-                    frequency: provider.mentalProgram!['frequency'] ?? 'N/A',
-                    focus: provider.mentalProgram!['focus'],
+                    title: workoutRec.mentalProgram!.name,
+                    description: 'Mental wellness activities',
+                    items: workoutRec.mentalProgram!.activities,
+                    duration: workoutRec.mentalProgram!.duration,
+                    frequency: workoutRec.mentalProgram!.frequency,
                     icon: Icons.psychology,
                     color: Colors.purple,
                     programType: 'mental',
@@ -392,5 +488,38 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Widget _buildScoreCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[700],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

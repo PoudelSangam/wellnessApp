@@ -5,12 +5,14 @@ class ExerciseAnimationWidget extends StatefulWidget {
   final String exerciseName;
   final String category;
   final int duration;
+  final bool autoPlay;
 
   const ExerciseAnimationWidget({
     super.key,
     required this.exerciseName,
     required this.category,
     this.duration = 30,
+    this.autoPlay = false,
   });
 
   @override
@@ -30,6 +32,12 @@ class _ExerciseAnimationWidgetState extends State<ExerciseAnimationWidget>
       duration: const Duration(seconds: 2),
       vsync: this,
     );
+    
+    // Auto-play if enabled
+    if (widget.autoPlay) {
+      _isPlaying = true;
+      _controller.repeat();
+    }
   }
 
   @override

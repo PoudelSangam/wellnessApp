@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import '../constants/api_constants.dart';
 import '../utils/logger.dart';
 
-class ApiService {
-  static final ApiService _instance = ApiService._internal();
+class DioApiService {
+  static final DioApiService _instance = DioApiService._internal();
   late final Dio _dio;
 
-  factory ApiService() {
+  factory DioApiService() {
     return _instance;
   }
 
-  ApiService._internal() {
+  DioApiService._internal() {
     _dio = Dio(BaseOptions(
       baseUrl: ApiConstants.baseUrl,
       connectTimeout: ApiConstants.apiTimeout,
@@ -28,7 +28,7 @@ class ApiService {
   }
 
   Dio get dio => _dio;
-  
+
   // GET Request
   Future<Map<String, dynamic>> get(
     String endpoint, {
@@ -46,7 +46,7 @@ class ApiService {
       rethrow;
     }
   }
-  
+
   // POST Request
   Future<Map<String, dynamic>> post(
     String endpoint, {
@@ -64,7 +64,7 @@ class ApiService {
       rethrow;
     }
   }
-  
+
   // PUT Request
   Future<Map<String, dynamic>> put(
     String endpoint, {
@@ -82,7 +82,7 @@ class ApiService {
       rethrow;
     }
   }
-  
+
   // DELETE Request
   Future<Map<String, dynamic>> delete(
     String endpoint, {
@@ -299,10 +299,60 @@ class ErrorInterceptor extends Interceptor {
 class ApiException implements Exception {
   final String message;
   final int statusCode;
-  final Map<String, dynamic>? errorDetails;
-  
+  final dynamic errorDetails;
+
   ApiException(this.message, this.statusCode, [this.errorDetails]);
-  
+
   @override
   String toString() => message;
+
+  // Helper method to show error in UI
+  void showError(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              _getIconForStatusCode(),
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: _getColorForStatusCode(),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
+  IconData _getIconForStatusCode() {
+    if (statusCode == 0) return Icons.wifi_off;
+    if (statusCode == 401) return Icons.lock_outline;
+    if (statusCode == 403) return Icons.block;
+    if (statusCode == 404) return Icons.search_off;
+    if (statusCode >= 500) return Icons.error_outline;
+    return Icons.warning_amber;
+  }
+
+  Color _getColorForStatusCode() {
+    if (statusCode == 0) return Colors.orange;
+    if (statusCode == 401 || statusCode == 403) return Colors.red[700]!;
+    if (statusCode == 404) return Colors.blue[700]!;
+    if (statusCode >= 500) return Colors.red[900]!;
+    return Colors.orange[800]!;
+  }
 }

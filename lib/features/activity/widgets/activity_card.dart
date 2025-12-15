@@ -36,7 +36,7 @@ class ActivityCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
-          context.push('/home/activity/detail/${activity.id}');
+          context.push('/activity/detail/${activity.id}');
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
