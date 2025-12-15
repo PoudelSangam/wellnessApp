@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../auth/widgets/custom_button.dart';
 import '../providers/activity_provider.dart';
 import '../models/activity_model.dart';
+import '../widgets/exercise_animation_widget.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final String activityId;
@@ -161,6 +162,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             AppTheme.accentColor,
                           ),
                         ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Exercise Animation Demo
+                      ExerciseAnimationWidget(
+                        exerciseName: activity.name,
+                        category: activity.category,
+                        duration: activity.duration,
                       ),
 
                       const SizedBox(height: 24),
