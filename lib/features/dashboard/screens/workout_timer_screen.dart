@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/utils/logger.dart';
 
 class WorkoutTimerScreen extends StatefulWidget {
   final String programTitle;
@@ -8,6 +10,7 @@ class WorkoutTimerScreen extends StatefulWidget {
   final List<String> exercises;
   final String programType;
   final Color color;
+  final int? activityId;
 
   const WorkoutTimerScreen({
     super.key,
@@ -16,6 +19,7 @@ class WorkoutTimerScreen extends StatefulWidget {
     required this.exercises,
     required this.programType,
     required this.color,
+    this.activityId,
   });
 
   @override
@@ -23,6 +27,7 @@ class WorkoutTimerScreen extends StatefulWidget {
 }
 
 class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
+  final ApiService _apiService = ApiService();
   Timer? _timer;
   int _totalSeconds = 0;
   int _elapsedSeconds = 0;
@@ -30,6 +35,7 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
   bool _isPaused = false;
   int _currentExerciseIndex = 0;
   bool _isCompleted = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -92,13 +98,81 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
     });
   }
 
-  void _completeWorkout() {
+  Future<void> _submitActivityCompletion(int motivation) async {
+    if (widget.activityId == null) {
+      Logger.warning('No activity ID provided, skipping API call');
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      // Mark activity as complete
+      await _apiService.post(
+        '/api/workout/activity/${widget.activityId}/complete/',
+        body: {
+          'completed': true,
+          'motivation': motivation,
+        },
+      );
+      Logger.info('Activity ${widget.activityId} marked as complete');
+
+      // Submit workout feedback
+      final completionRate = _totalSeconds > 0 ? (_elapsedSeconds / _totalSeconds) : 1.0;
+      await _apiService.post(
+        '/api/workout/feedback/',
+        body: {
+          'engagement_delta': completionRate >= 0.8 ? 0.15 : 0.05,
+          'workout_completed': widget.programType == 'physical',
+          'meditation_completed': widget.programType == 'mental',
+          'feedback_rating': motivation,
+          'notes': 'Completed ${widget.programTitle} in ${_formatTime(_elapsedSeconds)}',
+        },
+      );
+      Logger.info('Workout feedback submitted');
+    } catch (e) {
+      Logger.error('Failed to mark activity as complete: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save workout: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  void _completeWorkout() async {
     _timer?.cancel();
     setState(() {
       _isRunning = false;
       _isCompleted = true;
     });
 
+    // Show motivation rating dialog
+    int? motivation = await showDialog<int>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const _MotivationDialog(),
+    );
+
+    if (motivation == null) return; // User cancelled
+
+    // Submit to API
+    await _submitActivityCompletion(motivation);
+
+    if (!mounted) return;
+
+    // Show completion dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -142,6 +216,20 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
                       Text('${widget.exercises.length}'),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Motivation:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          Icon(Icons.favorite, size: 16, color: Colors.red),
+                          const SizedBox(width: 4),
+                          Text('$motivation/5'),
+                        ],
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -150,8 +238,10 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.of(context).pop(); // Close dialog
+              if (context.canPop()) {
+                context.pop(); // Go back to previous screen
+              }
             },
             child: const Text('Finish'),
           ),
@@ -391,5 +481,95 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
         ),
       ),
     );
+  }
+}
+// Motivation Rating Dialog
+class _MotivationDialog extends StatefulWidget {
+  const _MotivationDialog();
+
+  @override
+  State<_MotivationDialog> createState() => _MotivationDialogState();
+}
+
+class _MotivationDialogState extends State<_MotivationDialog> {
+  int _selectedMotivation = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('How motivated did you feel?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Rate your motivation level during this workout'),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              final rating = index + 1;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedMotivation = rating;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(
+                    Icons.favorite,
+                    size: 40,
+                    color: rating <= _selectedMotivation
+                        ? Colors.red
+                        : Colors.grey[300],
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _getMotivationText(_selectedMotivation),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: _getMotivationColor(_selectedMotivation),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _selectedMotivation),
+          child: const Text('Submit'),
+        ),
+      ],
+    );
+  }
+
+  String _getMotivationText(int level) {
+    switch (level) {
+      case 1:
+        return 'Very Low';
+      case 2:
+        return 'Low';
+      case 3:
+        return 'Moderate';
+      case 4:
+        return 'High';
+      case 5:
+        return 'Very High';
+      default:
+        return '';
+    }
+  }
+
+  Color _getMotivationColor(int level) {
+    if (level <= 2) return Colors.red;
+    if (level == 3) return Colors.orange;
+    return Colors.green;
   }
 }

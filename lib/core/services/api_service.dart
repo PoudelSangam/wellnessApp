@@ -2,10 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../constants/api_constants.dart';
 import '../utils/logger.dart';
+import 'storage_service.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
   late final Dio _dio;
+  final StorageService _storageService = StorageService();
 
   factory ApiService() {
     return _instance;
@@ -23,6 +25,7 @@ class ApiService {
     ));
 
     // Add interceptors
+    _dio.interceptors.add(AuthInterceptor(_storageService));
     _dio.interceptors.add(LoggingInterceptor());
     _dio.interceptors.add(ErrorInterceptor());
   }
@@ -112,6 +115,29 @@ class ApiService {
 
   void dispose() {
     _dio.close();
+  }
+}
+
+// Authentication Interceptor
+class AuthInterceptor extends Interceptor {
+  final StorageService _storageService;
+
+  AuthInterceptor(this._storageService);
+
+  @override
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    // Get the access token from secure storage
+    final token = await _storageService.getAccessToken();
+    
+    if (token != null && token.isNotEmpty) {
+      // Add the token to the request headers
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    
+    handler.next(options);
   }
 }
 

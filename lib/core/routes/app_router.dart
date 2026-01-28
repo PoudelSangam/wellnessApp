@@ -7,6 +7,7 @@ import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/activity/screens/activity_screen.dart';
 import '../../features/activity/screens/activity_detail_screen.dart';
 import '../../features/stats/screens/stats_screen.dart';
+import '../../features/stats/screens/comprehensive_stats_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
@@ -78,7 +79,7 @@ class AppRouter {
             GoRoute(
               path: '/stats',
               pageBuilder: (context, state) => const NoTransitionPage(
-                child: StatsScreen(),
+                child: ComprehensiveStatsScreen(),
               ),
             ),
             GoRoute(

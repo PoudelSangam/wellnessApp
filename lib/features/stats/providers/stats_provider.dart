@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/utils/logger.dart';
 import '../models/stats_model.dart';
+import '../models/comprehensive_stats_model.dart';
 
 class StatsProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -9,16 +10,70 @@ class StatsProvider extends ChangeNotifier {
   List<StatsModel> _dailyStats = [];
   List<StatsModel> _weeklyStats = [];
   List<StatsModel> _monthlyStats = [];
+  ComprehensiveStatsModel? _comprehensiveStats;
   bool _isLoading = false;
   String? _error;
 
   List<StatsModel> get dailyStats => _dailyStats;
   List<StatsModel> get weeklyStats => _weeklyStats;
   List<StatsModel> get monthlyStats => _monthlyStats;
+  ComprehensiveStatsModel? get comprehensiveStats => _comprehensiveStats;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Fetch daily stats
+  // Clear cached statistics
+  void clearStats() {
+    _comprehensiveStats = null;
+    _dailyStats = [];
+    _weeklyStats = [];
+    _monthlyStats = [];
+    _error = null;
+    notifyListeners();
+    Logger.info('Cleared cached statistics');
+  }
+
+  // Fetch comprehensive statistics
+  Future<void> fetchComprehensiveStats({
+    String period = '7days',
+    DateTime? startDate,
+    DateTime? endDate,
+    bool forceRefresh = false,
+  }) async {
+    // Clear old data before fetching new data
+    if (forceRefresh || _comprehensiveStats != null) {
+      _comprehensiveStats = null;
+    }
+    
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final queryParams = <String, dynamic>{
+        'period': period,
+      };
+
+      if (period == 'custom' && startDate != null && endDate != null) {
+        queryParams['start_date'] = startDate.toIso8601String();
+        queryParams['end_date'] = endDate.toIso8601String();
+      }
+
+      final response = await _apiService.get(
+        '/api/statistics/',
+        queryParams: queryParams,
+      );
+      
+      _comprehensiveStats = ComprehensiveStatsModel.fromJson(response);
+      Logger.info('Fetched comprehensive stats for period: $period');
+    } catch (e) {
+      _error = e.toString();
+      Logger.error('Error fetching comprehensive stats: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchDailyStats() async {
     _isLoading = true;
     _error = null;

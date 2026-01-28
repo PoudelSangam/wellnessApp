@@ -1,7 +1,6 @@
 class ApiConstants {
-  // Base URL - For Android Emulator use 10.0.2.2 instead of localhost
-  // For physical device, use your computer's IP address (e.g., http://192.168.x.x:8000)
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  // Base URL
+  static const String baseUrl = 'https://app.sangam1313.com.np';
   
   // Auth Endpoints
   static const String login = '/api/login/';
@@ -25,6 +24,9 @@ class ApiConstants {
   static const String progressHistory = '/api/progress/history/';
   static const String weeklyStats = '/api/progress/weekly/';
   static const String monthlyStats = '/api/progress/monthly/';
+  
+  // Statistics Endpoints
+  static const String comprehensiveStats = '/api/statistics/';
   
   // Timeout
   static const Duration apiTimeout = Duration(seconds: 30);
