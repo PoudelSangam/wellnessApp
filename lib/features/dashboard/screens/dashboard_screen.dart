@@ -293,7 +293,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   padding: const EdgeInsets.all(16.0),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                                      const Icon(Icons.info_outline, color: AppTheme.primaryColor),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(

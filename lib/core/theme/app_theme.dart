@@ -25,7 +25,6 @@ class AppTheme {
       secondary: secondaryColor,
       error: errorColor,
       surface: cardColor,
-      background: backgroundColor,
     ),
     
     // AppBar Theme
@@ -143,7 +142,6 @@ class AppTheme {
       secondary: secondaryColor,
       error: errorColor,
       surface: Color(0xFF16213E),
-      background: darkBackground,
     ),
     
     appBarTheme: const AppBarTheme(

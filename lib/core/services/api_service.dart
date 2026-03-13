@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import '../constants/api_constants.dart';
 import '../utils/logger.dart';
 import 'storage_service.dart';
@@ -246,7 +245,8 @@ class ErrorInterceptor extends Interceptor {
         break;
 
       case 401:
-        message = 'Session expired. Please login again.';
+        message = _extractErrorMessage(data) ??
+                  'Session expired. Please login again.';
         break;
 
       case 403:
@@ -299,6 +299,16 @@ class ErrorInterceptor extends Interceptor {
         // Django REST Framework validation errors
         if (data['non_field_errors'] != null && data['non_field_errors'] is List) {
           return (data['non_field_errors'] as List).first.toString();
+        }
+
+        if (data.length == 1) {
+          final onlyValue = data.values.first;
+          if (onlyValue is List && onlyValue.isNotEmpty) {
+            return onlyValue.first.toString();
+          }
+          if (onlyValue is String && onlyValue.isNotEmpty) {
+            return onlyValue;
+          }
         }
 
         // Extract first validation error

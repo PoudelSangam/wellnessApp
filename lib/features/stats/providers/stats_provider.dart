@@ -154,8 +154,9 @@ class StatsProvider extends ChangeNotifier {
     double totalMood = 0;
     for (var stat in stats) {
       totalMood += stat.moodScore;
-      if (stat.moodScore >= 9) moodCounts['Very Happy'] = (moodCounts['Very Happy'] ?? 0) + 1;
-      else if (stat.moodScore >= 7) moodCounts['Happy'] = (moodCounts['Happy'] ?? 0) + 1;
+      if (stat.moodScore >= 9) {
+        moodCounts['Very Happy'] = (moodCounts['Very Happy'] ?? 0) + 1;
+      } else if (stat.moodScore >= 7) moodCounts['Happy'] = (moodCounts['Happy'] ?? 0) + 1;
       else if (stat.moodScore >= 5) moodCounts['Neutral'] = (moodCounts['Neutral'] ?? 0) + 1;
       else if (stat.moodScore >= 3) moodCounts['Sad'] = (moodCounts['Sad'] ?? 0) + 1;
       else moodCounts['Very Sad'] = (moodCounts['Very Sad'] ?? 0) + 1;

@@ -81,7 +81,7 @@ class AuthProvider extends ChangeNotifier {
       final apiException = e.error is ApiException ? e.error as ApiException : null;
       _errorMessage = apiException?.message ?? 'Login failed. Please try again.';
       _setLoading(false);
-      Logger.error('Login failed: ${_errorMessage}');
+      Logger.error('Login failed: $_errorMessage');
       return false;
     } catch (e) {
       _errorMessage = 'An unexpected error occurred';
@@ -123,7 +123,7 @@ class AuthProvider extends ChangeNotifier {
       final apiException = e.error is ApiException ? e.error as ApiException : null;
       _errorMessage = apiException?.message ?? 'Signup failed. Please try again.';
       _setLoading(false);
-      Logger.error('Signup failed: ${_errorMessage}');
+      Logger.error('Signup failed: $_errorMessage');
       return false;
     } catch (e) {
       _errorMessage = 'An unexpected error occurred';

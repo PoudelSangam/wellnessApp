@@ -222,7 +222,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.check_circle,
                                 color: AppTheme.successColor,
                                 size: 20,

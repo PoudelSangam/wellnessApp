@@ -168,7 +168,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                           ),
                           child: Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.person_outline,
                                 color: AppTheme.accentColor,
                                 size: 20,
@@ -256,7 +256,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.notifications_outlined, color: AppTheme.primaryColor),
+                              const Icon(Icons.notifications_outlined, color: AppTheme.primaryColor),
                               const SizedBox(width: 8),
                               Text(
                                 'Reminders',
@@ -271,7 +271,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                                 padding: const EdgeInsets.symmetric(vertical: 4),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.alarm, color: Colors.orange, size: 20),
+                                    const Icon(Icons.alarm, color: Colors.orange, size: 20),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(

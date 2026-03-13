@@ -153,7 +153,7 @@ class _ProgramCardState extends State<ProgramCard> {
                             ),
                           ),
                           if (_isCompleted)
-                            Icon(
+                            const Icon(
                               Icons.check_circle,
                               color: Colors.green,
                               size: 24,
@@ -324,11 +324,11 @@ class _ProgramCardState extends State<ProgramCard> {
                 TextButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Program saved to favorites!'),
+                      const SnackBar(
+                        content: Text('Program saved to favorites!'),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 2),
+                        duration: Duration(seconds: 2),
                       ),
                     );
                   },

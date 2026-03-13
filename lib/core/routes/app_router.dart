@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -6,7 +5,6 @@ import '../../features/auth/screens/signup_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/activity/screens/activity_screen.dart';
 import '../../features/activity/screens/activity_detail_screen.dart';
-import '../../features/stats/screens/stats_screen.dart';
 import '../../features/stats/screens/comprehensive_stats_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';

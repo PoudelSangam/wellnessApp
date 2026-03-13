@@ -223,7 +223,7 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
                       const Text('Motivation:', style: TextStyle(fontWeight: FontWeight.bold)),
                       Row(
                         children: [
-                          Icon(Icons.favorite, size: 16, color: Colors.red),
+                          const Icon(Icons.favorite, size: 16, color: Colors.red),
                           const SizedBox(width: 4),
                           Text('$motivation/5'),
                         ],

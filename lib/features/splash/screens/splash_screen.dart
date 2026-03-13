@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: AppTheme.primaryColor,
       body: Center(
         child: Column(
@@ -45,8 +45,8 @@ class _SplashScreenState extends State<SplashScreen> {
               size: 100,
               color: Colors.white,
             ),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: 24),
+            Text(
               'Wellness App',
               style: TextStyle(
                 fontSize: 32,
@@ -54,16 +54,16 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'Your journey to better health',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.white70,
               ),
             ),
-            const SizedBox(height: 48),
-            const CircularProgressIndicator(
+            SizedBox(height: 48),
+            CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ],

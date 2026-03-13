@@ -675,7 +675,7 @@ class _ComprehensiveStatsScreenState extends State<ComprehensiveStatsScreen> {
               children: [
                 Column(
                   children: [
-                    Icon(Icons.star, color: Colors.amber, size: 32),
+                    const Icon(Icons.star, color: Colors.amber, size: 32),
                     const SizedBox(height: 8),
                     Text(
                       ratings.averageRating.toStringAsFixed(1),
@@ -693,7 +693,7 @@ class _ComprehensiveStatsScreenState extends State<ComprehensiveStatsScreen> {
                 ),
                 Column(
                   children: [
-                    Icon(Icons.numbers, color: Colors.blue, size: 32),
+                    const Icon(Icons.numbers, color: Colors.blue, size: 32),
                     const SizedBox(height: 8),
                     Text(
                       ratings.totalRatings.toString(),
@@ -872,7 +872,7 @@ class _ComprehensiveStatsScreenState extends State<ComprehensiveStatsScreen> {
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.star, size: 16, color: Colors.amber),
+                          const Icon(Icons.star, size: 16, color: Colors.amber),
                           const SizedBox(width: 4),
                           Text(activity.rating!.toStringAsFixed(1)),
                         ],

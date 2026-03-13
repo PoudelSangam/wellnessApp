@@ -52,7 +52,7 @@ class ComprehensiveStatsModel {
       if (data is! List) return [];
       try {
         return data
-            .where((item) => item is Map<String, dynamic>)
+            .whereType<Map<String, dynamic>>()
             .map((item) => DailyActivityCount.fromJson(item as Map<String, dynamic>))
             .toList();
       } catch (e) {
@@ -65,7 +65,7 @@ class ComprehensiveStatsModel {
       if (data is! List) return [];
       try {
         return data
-            .where((item) => item is Map<String, dynamic>)
+            .whereType<Map<String, dynamic>>()
             .map((item) => DailyDuration.fromJson(item as Map<String, dynamic>))
             .toList();
       } catch (e) {
@@ -78,7 +78,7 @@ class ComprehensiveStatsModel {
       if (data is! List) return [];
       try {
         return data
-            .where((item) => item is Map<String, dynamic>)
+            .whereType<Map<String, dynamic>>()
             .map((item) => RecentActivity.fromJson(item as Map<String, dynamic>))
             .toList();
       } catch (e) {

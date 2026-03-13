@@ -43,17 +43,21 @@ static const String baseUrl = 'http://your-backend-url.com';
 ```json
 {
   "email": "user@example.com",
-  "username": "john_doe",
-  "password": "securePass123",
+  "username": "m0SITa2HoABgvc9_XDuf5c9lV7dQzXoo@N.JhMwWig@2SdYTV17W8ksjgDVcsF1.8Vapa_BKZlffh",
+  "password": "string",
+  "password2": "string",
   "age": 25,
-  "gender": "Male",
-  "height": 175.5,
-  "weight": 70.0,
-  "self_reported_stress": "Moderate",
-  "gad7_score": 8,
-  "physical_activity_week": 3,
-  "importance_stress_reduction": "High",
-  "primary_goal": "Reduce Stress",
+  "gender": "male",
+  "diet_type": "vegetarian",
+  "stress_level": "low",
+  "mental_health_condition": "none",
+  "exercise_level": "low",
+  "sleep_hours": 8,
+  "work_hours_per_week": 40,
+  "screen_time_per_day": 6,
+  "self_reported_social_interaction_score": 7,
+  "happiness_score": 8,
+  "primary_goal": 0,
   "workout_goal_days": 5
 }
 ```

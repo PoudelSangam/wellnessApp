@@ -53,7 +53,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       }).toList();
     } else {
       // Create multiple sets for better workout structure
-      final sets = 3;
+      const sets = 3;
       final durationPerSet = (widget.activity.duration * 60 / sets).ceil();
       _exercises = List.generate(sets, (index) {
         return ExerciseStep(
@@ -380,7 +380,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 children: [
                   Text(
                     _formatTime(_totalSeconds),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 42,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
@@ -694,7 +694,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                           ),
                           Text(
                             '${_currentExerciseIndex + 1}/${_exercises.length}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: AppTheme.primaryColor,

@@ -74,7 +74,7 @@ class _MotivationDialogState extends State<MotivationDialog> {
                     color: AppTheme.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.psychology,
                     color: AppTheme.primaryColor,
                     size: 28,
