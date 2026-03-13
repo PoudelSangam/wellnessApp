@@ -21,6 +21,16 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AuthProvider>().clearError();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
@@ -28,6 +38,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
+    context.read<AuthProvider>().clearError();
+
     if (_formKey.currentState!.validate()) {
       final authProvider = context.read<AuthProvider>();
 
@@ -243,6 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               TextButton(
                                 onPressed: () {
+                                  context.read<AuthProvider>().clearError();
                                   context.go('/signup');
                                 },
                                 child: const Text(

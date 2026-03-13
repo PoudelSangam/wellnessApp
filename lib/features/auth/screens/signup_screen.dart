@@ -94,6 +94,16 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscureConfirmPassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AuthProvider>().clearError();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _usernameController.dispose();
@@ -135,6 +145,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleSignup() async {
+    context.read<AuthProvider>().clearError();
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -198,7 +210,10 @@ class _SignupScreenState extends State<SignupScreen> {
               : SnackBarAction(
                   label: 'LOGIN',
                   textColor: Colors.white,
-                  onPressed: () => context.go('/login'),
+                  onPressed: () {
+                    context.read<AuthProvider>().clearError();
+                    context.go('/login');
+                  },
                 ),
         ),
       );
@@ -249,7 +264,10 @@ class _SignupScreenState extends State<SignupScreen> {
         title: const Text('Create Account'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => context.go('/login'),
+          onPressed: () {
+            context.read<AuthProvider>().clearError();
+            context.go('/login');
+          },
         ),
       ),
       body: SafeArea(
@@ -580,7 +598,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 12),
                     TextButton(
-                      onPressed: () => context.go('/login'),
+                      onPressed: () {
+                        context.read<AuthProvider>().clearError();
+                        context.go('/login');
+                      },
                       child: const Text('Already have an account? Sign in'),
                     ),
                   ],

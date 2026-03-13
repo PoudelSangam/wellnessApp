@@ -31,7 +31,7 @@ class AppRouter {
         }
         
         if (isLoggedIn && (isLoggingIn || isSigningUp)) {
-          return '/';
+          return '/home';
         }
         
         return null;

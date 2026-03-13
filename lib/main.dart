@@ -12,19 +12,24 @@ import 'features/stats/providers/stats_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  final authProvider = AuthProvider(const FlutterSecureStorage());
+  runApp(MyApp(authProvider: authProvider));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final AuthProvider authProvider;
+  final router;
+
+  MyApp({
+    super.key,
+    required this.authProvider,
+  }) : router = AppRouter.router(authProvider);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider(const FlutterSecureStorage()),
-        ),
+        ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProxyProvider<AuthProvider, ActivityProvider>(
           create: (_) => ActivityProvider(),
           update: (_, auth, previous) =>
@@ -47,17 +52,13 @@ class MyApp extends StatelessWidget {
           create: (_) => StatsProvider(),
         ),
       ],
-      child: Consumer<AuthProvider>(
-        builder: (context, authProvider, _) {
-          return MaterialApp.router(
-            title: 'Wellness App',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.system,
-            routerConfig: AppRouter.router(authProvider),
-          );
-        },
+      child: MaterialApp.router(
+        title: 'Wellness App',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        routerConfig: router,
       ),
     );
   }
