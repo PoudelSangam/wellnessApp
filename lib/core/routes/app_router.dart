@@ -10,8 +10,12 @@ import '../../features/stats/screens/comprehensive_stats_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
+import '../../features/profile/screens/settings_screen.dart';
+import '../../features/profile/screens/help_support_screen.dart';
+import '../../features/profile/screens/privacy_policy_screen.dart';
 import '../../features/splash/screens/splash_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
+import '../../features/journal/screens/journal_list_screen.dart';
 import '../widgets/main_navigation.dart';
 
 class AppRouter {
@@ -62,6 +66,26 @@ class AppRouter {
           path: '/chat',
           parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) => const ChatScreen(),
+        ),
+        GoRoute(
+          path: '/settings',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/help-support',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const HelpSupportScreen(),
+        ),
+        GoRoute(
+          path: '/privacy-policy',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const PrivacyPolicyScreen(),
+        ),
+        GoRoute(
+          path: '/journal',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const JournalListScreen(),
         ),
         ShellRoute(
           navigatorKey: _shellNavigatorKey,

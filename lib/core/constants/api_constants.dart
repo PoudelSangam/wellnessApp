@@ -27,6 +27,13 @@ class ApiConstants {
   
   // Statistics Endpoints
   static const String comprehensiveStats = '/api/statistics/';
+
+  // Notifications Endpoints
+  static const String notifications = '/api/notifications/';
+
+  // Journal Endpoints
+  static const String journalEntries = '/api/journal/entries/';
+  static const String journalCbtGuide = '/api/journal/cbt-guide/';
   
   // Timeout
   static const Duration apiTimeout = Duration(seconds: 30);

@@ -160,11 +160,43 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         final notification = notifications[index];
         return _NotificationCard(
           notification: notification,
+          payloadSummary: _formatPayload(notification.payload),
           onTap: () => _handleNotificationTap(notification),
           onDelete: () => _handleDelete(notification.id),
         );
       },
     );
+  }
+
+  String? _formatPayload(Map<String, dynamic>? payload) {
+    if (payload == null || payload.isEmpty) {
+      return null;
+    }
+
+    if (payload.containsKey('quote')) {
+      final quote = payload['quote'];
+      final author = payload['author'];
+      if (quote != null && author != null) {
+        return '"$quote" - $author';
+      }
+      if (quote != null) {
+        return '"$quote"';
+      }
+    }
+
+    if (payload.containsKey('week')) {
+      return 'Week: ${payload['week']}';
+    }
+
+    if (payload.containsKey('date')) {
+      return 'Date: ${payload['date']}';
+    }
+
+    if (payload.containsKey('last_entry_check')) {
+      return 'Last entry: ${payload['last_entry_check']}';
+    }
+
+    return payload.toString();
   }
 
   void _handleNotificationTap(NotificationModel notification) {
@@ -203,11 +235,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
 class _NotificationCard extends StatelessWidget {
   final NotificationModel notification;
+  final String? payloadSummary;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   const _NotificationCard({
     required this.notification,
+    required this.payloadSummary,
     required this.onTap,
     required this.onDelete,
   });
@@ -280,6 +314,16 @@ class _NotificationCard extends StatelessWidget {
                         fontSize: 14,
                       ),
                     ),
+                    if (payloadSummary != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        payloadSummary!,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Text(
                       _formatTimestamp(notification.timestamp),
@@ -303,22 +347,22 @@ class _NotificationCard extends StatelessWidget {
     Color iconColor;
 
     switch (notification.type) {
-      case 'workout':
-        iconData = Icons.fitness_center;
-        iconColor = Colors.orange;
+      case 'motivational_quote':
+        iconData = Icons.format_quote;
+        iconColor = Colors.indigo;
         break;
-      case 'reminder':
-        iconData = Icons.notifications;
-        iconColor = Colors.blue;
+      case 'journal':
+      case 'journal_entry':
+        iconData = Icons.book;
+        iconColor = Colors.teal;
         break;
-      case 'achievement':
-        iconData = Icons.emoji_events;
-        iconColor = Colors.amber;
+      case 'weekly_summary':
+        iconData = Icons.insights;
+        iconColor = Colors.deepPurple;
         break;
-      case 'system':
       default:
-        iconData = Icons.info;
-        iconColor = Colors.grey;
+        iconData = Icons.notifications;
+        iconColor = Colors.blueGrey;
     }
 
     return Container(

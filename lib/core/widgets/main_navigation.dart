@@ -54,18 +54,37 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget build(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     final bool showChatFab = !location.startsWith('/chat');
+    final bool showJournalFab = !location.startsWith('/journal');
+    final bool showFabStack = showChatFab || showJournalFab;
 
     return Scaffold(
       body: widget.child,
-      floatingActionButton: showChatFab
-          ? FloatingActionButton(
-              onPressed: () => context.push('/chat'),
-              tooltip: 'Chat',
-              child: const Icon(Icons.chat_bubble_outline),
+      floatingActionButton: showFabStack
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (showJournalFab)
+                  FloatingActionButton(
+                    heroTag: 'journalFab',
+                    onPressed: () => context.push('/journal'),
+                    tooltip: 'Journal',
+                    child: const Icon(Icons.book_outlined),
+                  ),
+                if (showChatFab && showJournalFab)
+                  const SizedBox(height: 12),
+                if (showChatFab)
+                  FloatingActionButton(
+                    heroTag: 'chatFab',
+                    onPressed: () => context.push('/chat'),
+                    tooltip: 'Chat',
+                    child: const Icon(Icons.chat_bubble_outline),
+                  ),
+              ],
             )
           : null,
       floatingActionButtonLocation:
-          showChatFab ? FloatingActionButtonLocation.endFloat : null,
+          showFabStack ? FloatingActionButtonLocation.endFloat : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _calculateSelectedIndex(context),
         onTap: _onItemTapped,

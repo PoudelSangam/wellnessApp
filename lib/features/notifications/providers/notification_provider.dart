@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/utils/logger.dart';
 import '../models/notification_model.dart';
@@ -23,29 +24,32 @@ class NotificationProvider extends ChangeNotifier {
       _notifications.where((n) => n.isRead).toList();
 
   // Fetch notifications from API
-  Future<void> fetchNotifications() async {
+  Future<void> fetchNotifications({bool unreadOnly = false}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      // For now, using mock data since backend might not have this endpoint yet
-      // Uncomment below when backend is ready
-      // final response = await _apiService.get('/api/notifications/');
-      // _notifications = (response['results'] as List)
-      //     .map((json) => NotificationModel.fromJson(json))
-      //     .toList();
-      
-      // Mock notifications
-      _notifications = _generateMockNotifications();
-      
+      final response = await _apiService.get(
+        ApiConstants.notifications,
+        queryParams: unreadOnly ? {'unread_only': 'true'} : null,
+      );
+
+      final data = response['data'] ?? response['results'] ?? response;
+      if (data is List) {
+        _notifications = data
+            .whereType<Map<String, dynamic>>()
+            .map(NotificationModel.fromJson)
+            .toList();
+      } else {
+        _notifications = [];
+      }
+
       Logger.info('Fetched ${_notifications.length} notifications');
     } catch (e) {
       _error = e.toString();
       Logger.error('Error fetching notifications: $e');
-      
-      // Use mock data on error
-      _notifications = _generateMockNotifications();
+      _notifications = [];
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -116,69 +120,6 @@ class NotificationProvider extends ChangeNotifier {
     } catch (e) {
       Logger.error('Error clearing notifications: $e');
     }
-  }
-
-  // Generate mock notifications for demonstration
-  List<NotificationModel> _generateMockNotifications() {
-    final now = DateTime.now();
-    return [
-      NotificationModel(
-        id: '1',
-        title: 'Workout Reminder',
-        message: 'Time for your morning workout! Complete "Full Body Strength"',
-        type: 'workout',
-        timestamp: now.subtract(const Duration(hours: 2)),
-        isRead: false,
-      ),
-      NotificationModel(
-        id: '2',
-        title: 'Achievement Unlocked! 🎉',
-        message: 'You\'ve completed 5 workouts this week!',
-        type: 'achievement',
-        timestamp: now.subtract(const Duration(hours: 5)),
-        isRead: false,
-      ),
-      NotificationModel(
-        id: '3',
-        title: 'Mindfulness Session',
-        message: 'Don\'t forget your evening meditation at 7 PM',
-        type: 'reminder',
-        timestamp: now.subtract(const Duration(hours: 8)),
-        isRead: false,
-      ),
-      NotificationModel(
-        id: '4',
-        title: 'Weekly Progress Report',
-        message: 'Your weekly wellness report is ready to view',
-        type: 'system',
-        timestamp: now.subtract(const Duration(days: 1)),
-        isRead: true,
-      ),
-      NotificationModel(
-        id: '5',
-        title: 'New Workout Available',
-        message: 'Check out the new "Yoga Flow" program',
-        type: 'workout',
-        timestamp: now.subtract(const Duration(days: 1)),
-        isRead: true,
-      ),
-      NotificationModel(
-        id: '6',
-        title: 'Hydration Reminder 💧',
-        message: 'Remember to drink water! Stay hydrated',
-        type: 'reminder',
-        timestamp: now.subtract(const Duration(days: 2)),
-        isRead: true,
-      ),
-      NotificationModel(
-        id: '7',
-        title: 'Streak Alert! 🔥',
-        message: 'You\'re on a 7-day workout streak! Keep it up!',
-        type: 'achievement',
-        timestamp: now.subtract(const Duration(days: 3)),
-        isRead: true,
-      ),
-    ];
   }
 
   @override

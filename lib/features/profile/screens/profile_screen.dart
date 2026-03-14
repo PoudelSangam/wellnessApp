@@ -160,11 +160,7 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.settings,
                     title: 'Settings',
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Settings coming soon'),
-                        ),
-                      );
+                      context.push('/settings');
                     },
                   ),
                   const Divider(height: 1),
@@ -172,11 +168,7 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.help_outline,
                     title: 'Help & Support',
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Help & Support coming soon'),
-                        ),
-                      );
+                      context.push('/help-support');
                     },
                   ),
                   const Divider(height: 1),
@@ -184,11 +176,7 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.privacy_tip_outlined,
                     title: 'Privacy Policy',
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Privacy Policy coming soon'),
-                        ),
-                      );
+                      context.push('/privacy-policy');
                     },
                   ),
                 ],

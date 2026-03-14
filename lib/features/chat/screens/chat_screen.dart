@@ -202,36 +202,60 @@ class _ChatMessageBubble extends StatelessWidget {
 
     return Align(
       alignment: alignment,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 280),
-        child: Card(
-          color: bubbleColor,
-          elevation: 0,
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message.text,
-                  style: TextStyle(color: textColor),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isUser)
+            Padding(
+              padding: const EdgeInsets.only(right: 8, bottom: 4),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: isSystem
+                    ? colorScheme.errorContainer
+                    : colorScheme.primaryContainer,
+                child: Icon(
+                  isSystem ? Icons.info_outline : Icons.smart_toy_outlined,
+                  size: 18,
+                  color: isSystem
+                      ? colorScheme.onErrorContainer
+                      : colorScheme.onPrimaryContainer,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  timeText,
-                  style: TextStyle(
-                    color: textColor.withOpacity(0.7),
-                    fontSize: 11,
-                  ),
+              ),
+            ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 260),
+            child: Card(
+              color: bubbleColor,
+              elevation: 0,
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.text,
+                      style: TextStyle(color: textColor),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      timeText,
+                      style: TextStyle(
+                        color: textColor.withOpacity(0.7),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
