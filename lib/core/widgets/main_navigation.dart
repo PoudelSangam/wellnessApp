@@ -52,8 +52,20 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final String location = GoRouterState.of(context).uri.path;
+    final bool showChatFab = !location.startsWith('/chat');
+
     return Scaffold(
       body: widget.child,
+      floatingActionButton: showChatFab
+          ? FloatingActionButton(
+              onPressed: () => context.push('/chat'),
+              tooltip: 'Chat',
+              child: const Icon(Icons.chat_bubble_outline),
+            )
+          : null,
+      floatingActionButtonLocation:
+          showChatFab ? FloatingActionButtonLocation.endFloat : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _calculateSelectedIndex(context),
         onTap: _onItemTapped,

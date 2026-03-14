@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -10,11 +11,18 @@ import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/splash/screens/splash_screen.dart';
+import '../../features/chat/screens/chat_screen.dart';
 import '../widgets/main_navigation.dart';
 
 class AppRouter {
+  static final GlobalKey<NavigatorState> _rootNavigatorKey =
+      GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> _shellNavigatorKey =
+      GlobalKey<NavigatorState>();
+
   static GoRouter router(AuthProvider authProvider) {
     return GoRouter(
+      navigatorKey: _rootNavigatorKey,
       initialLocation: '/splash',
       redirect: (context, state) {
         final isLoggedIn = authProvider.isAuthenticated;
@@ -50,7 +58,13 @@ class AppRouter {
           path: '/signup',
           builder: (context, state) => const SignupScreen(),
         ),
+        GoRoute(
+          path: '/chat',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const ChatScreen(),
+        ),
         ShellRoute(
+          navigatorKey: _shellNavigatorKey,
           builder: (context, state, child) => MainNavigation(child: child),
           routes: [
             GoRoute(
