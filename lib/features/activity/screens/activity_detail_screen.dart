@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/widgets/custom_button.dart';
 import '../providers/activity_provider.dart';
-import '../models/activity_model.dart';
 import '../widgets/exercise_animation_widget.dart';
 import '../widgets/motivation_dialog.dart';
 import 'workout_session_screen.dart';
