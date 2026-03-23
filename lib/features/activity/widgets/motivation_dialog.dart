@@ -17,7 +17,6 @@ class _MotivationDialogState extends State<MotivationDialog> {
   int _selectedMotivation = 3;
 
   final List<String> _motivationLabels = [
-    'Very Low',
     'Low',
     'Moderate',
     'Good',
@@ -26,7 +25,6 @@ class _MotivationDialogState extends State<MotivationDialog> {
   ];
 
   final List<IconData> _motivationIcons = [
-    Icons.sentiment_very_dissatisfied,
     Icons.sentiment_dissatisfied,
     Icons.sentiment_neutral,
     Icons.sentiment_satisfied,
@@ -35,7 +33,6 @@ class _MotivationDialogState extends State<MotivationDialog> {
   ];
 
   final List<Color> _motivationColors = [
-    Colors.red,
     Colors.orange,
     Colors.yellow[700]!,
     Colors.lightGreen,
@@ -45,26 +42,32 @@ class _MotivationDialogState extends State<MotivationDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final maxDialogHeight = MediaQuery.of(context).size.height * 0.82;
+    final selectedIndex = _selectedMotivation - 1;
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              _motivationColors[_selectedMotivation].withOpacity(0.05),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxDialogHeight),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [
+                Colors.white,
+                _motivationColors[selectedIndex].withOpacity(0.05),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             // Header
             Row(
               children: [
@@ -112,10 +115,10 @@ class _MotivationDialogState extends State<MotivationDialog> {
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               child: Icon(
-                _motivationIcons[_selectedMotivation],
+                _motivationIcons[selectedIndex],
                 key: ValueKey(_selectedMotivation),
                 size: 80,
-                color: _motivationColors[_selectedMotivation],
+                color: _motivationColors[selectedIndex],
               ),
             ),
 
@@ -125,12 +128,12 @@ class _MotivationDialogState extends State<MotivationDialog> {
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: Text(
-                _motivationLabels[_selectedMotivation],
+                _motivationLabels[selectedIndex],
                 key: ValueKey(_selectedMotivation),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: _motivationColors[_selectedMotivation],
+                  color: _motivationColors[selectedIndex],
                 ),
               ),
             ),
@@ -150,18 +153,18 @@ class _MotivationDialogState extends State<MotivationDialog> {
             // Slider
             SliderTheme(
               data: SliderThemeData(
-                activeTrackColor: _motivationColors[_selectedMotivation],
-                inactiveTrackColor: _motivationColors[_selectedMotivation].withOpacity(0.2),
-                thumbColor: _motivationColors[_selectedMotivation],
-                overlayColor: _motivationColors[_selectedMotivation].withOpacity(0.2),
+                activeTrackColor: _motivationColors[selectedIndex],
+                inactiveTrackColor: _motivationColors[selectedIndex].withOpacity(0.2),
+                thumbColor: _motivationColors[selectedIndex],
+                overlayColor: _motivationColors[selectedIndex].withOpacity(0.2),
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
                 trackHeight: 6,
               ),
               child: Slider(
                 value: _selectedMotivation.toDouble(),
-                min: 0,
+                min: 1,
                 max: 5,
-                divisions: 5,
+                divisions: 4,
                 onChanged: (value) {
                   setState(() {
                     _selectedMotivation = value.toInt();
@@ -175,15 +178,16 @@ class _MotivationDialogState extends State<MotivationDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(6, (index) {
+                children: List.generate(5, (index) {
+                  final level = index + 1;
                   return Text(
-                    '$index',
+                    '$level',
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: _selectedMotivation == index
+                      fontWeight: _selectedMotivation == level
                           ? FontWeight.bold
                           : FontWeight.normal,
-                      color: _selectedMotivation == index
+                      color: _selectedMotivation == level
                           ? _motivationColors[index]
                           : Colors.grey,
                     ),
@@ -217,7 +221,7 @@ class _MotivationDialogState extends State<MotivationDialog> {
                       widget.onComplete(_selectedMotivation);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _motivationColors[_selectedMotivation],
+                      backgroundColor: _motivationColors[selectedIndex],
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -242,7 +246,9 @@ class _MotivationDialogState extends State<MotivationDialog> {
                 ),
               ],
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );

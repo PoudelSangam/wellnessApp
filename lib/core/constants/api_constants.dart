@@ -1,6 +1,13 @@
 class ApiConstants {
   // Base URL
   static const String baseUrl = 'https://app.sangam1313.com.np';
+  static const String localBaseUrl = 'http://localhost:8000';
+  static const String localAndroidEmulatorBaseUrl = 'http://10.0.2.2:8000';
+
+  static const List<String> fallbackBaseUrls = [
+    localBaseUrl,
+    localAndroidEmulatorBaseUrl,
+  ];
   
   // Auth Endpoints
   static const String login = '/api/login/';
@@ -8,7 +15,7 @@ class ApiConstants {
   static const String tokenRefresh = '/api/token/refresh/';
   
   // User Endpoints
-  static const String userProfile = '/api/user/profile/';
+  static const String profile = '/api/profile/';
   static const String updateProfile = '/api/user/update/';
   static const String deleteAccount = '/api/user/delete/';
   

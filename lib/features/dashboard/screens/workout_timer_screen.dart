@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/utils/logger.dart';
 
 class WorkoutTimerScreen extends StatefulWidget {
@@ -111,10 +111,9 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
     try {
       // Mark activity as complete
       await _apiService.post(
-        '/api/workout/activity/${widget.activityId}/complete/',
+        '${ApiConstants.completeWorkoutActivity}${widget.activityId}/complete/',
         body: {
           'completed': true,
-          'motivation': motivation,
         },
       );
       Logger.info('Activity ${widget.activityId} marked as complete');
@@ -237,11 +236,9 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop(); // Close dialog
-              if (context.canPop()) {
-                context.pop(); // Go back to previous screen
-              }
+              await Navigator.of(context).maybePop(); // Go back safely
             },
             child: const Text('Finish'),
           ),

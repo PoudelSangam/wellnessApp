@@ -191,7 +191,7 @@ class _ChatMessageBubble extends StatelessWidget {
         ? colorScheme.errorContainer
         : isUser
             ? colorScheme.primary
-            : colorScheme.surfaceVariant;
+            : colorScheme.surfaceContainerHighest;
     final textColor = isSystem
         ? colorScheme.onErrorContainer
         : isUser

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/widgets/custom_button.dart';
 import '../providers/activity_provider.dart';
-import '../widgets/exercise_animation_widget.dart';
 import '../widgets/motivation_dialog.dart';
 import 'workout_session_screen.dart';
 
@@ -23,7 +22,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadActivityDetail();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _loadActivityDetail();
+    });
   }
 
   Future<void> _loadActivityDetail() async {
@@ -32,66 +36,54 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _handleComplete() async {
-    // Show motivation dialog
-    showDialog(
+    int? selectedMotivation;
+    await showDialog<void>(
       context: context,
-      builder: (context) => MotivationDialog(
-        onComplete: (motivation) async {
-          int? activityId = int.tryParse(widget.activityId);
-          
-          bool success;
-          if (activityId != null) {
-            final activityProvider = context.read<ActivityProvider>();
-            success = await activityProvider.completeActivityWithMotivation(
-              activityId,
-              motivation,
-            );
-          } else {
-            final activityProvider = context.read<ActivityProvider>();
-            success = await activityProvider.completeActivity(widget.activityId);
-          }
-
-          if (mounted) {
-            if (success) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Activity completed! Motivation: $motivation 🎉'),
-                  backgroundColor: AppTheme.successColor,
-                ),
-              );
-              Navigator.of(context).pop();
-            } else {
-              final activityProvider = context.read<ActivityProvider>();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    activityProvider.errorMessage ?? 'Failed to complete activity',
-                  ),
-                  backgroundColor: AppTheme.errorColor,
-                ),
-              );
-            }
-          }
+      barrierDismissible: false,
+      builder: (dialogContext) => MotivationDialog(
+        onComplete: (motivation) {
+          selectedMotivation = motivation;
         },
+      ),
+    );
+
+    if (!mounted || selectedMotivation == null) {
+      return;
+    }
+
+    final activityProvider = context.read<ActivityProvider>();
+    final success = await activityProvider.completeWorkoutActivity(
+      widget.activityId,
+      motivation: selectedMotivation,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Activity marked as done.'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+      Navigator.of(context).maybePop();
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          activityProvider.errorMessage ?? 'Failed to complete activity',
+        ),
+        backgroundColor: AppTheme.errorColor,
       ),
     );
   }
 
   Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'mental':
-        return AppTheme.primaryColor;
-      case 'physical':
-        return AppTheme.secondaryColor;
-      case 'breathing':
-        return Colors.blue;
-      case 'meditation':
-        return Colors.purple;
-      case 'yoga':
-        return Colors.orange;
-      default:
-        return AppTheme.accentColor;
-    }
+    return AppTheme.primaryColor;
   }
 
   @override
@@ -186,14 +178,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                       ),
 
                       const SizedBox(height: 24),
-
-                      // Exercise Animation Demo
-                      ExerciseAnimationWidget(
-                        exerciseName: activity.name,
-                        category: activity.category,
-                        duration: activity.duration,
-                      ),
-
                       const SizedBox(height: 24),
 
                       // Description

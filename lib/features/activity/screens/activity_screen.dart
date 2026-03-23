@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -39,7 +40,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     await Future.wait([
       activityProvider.fetchActivities(),
       activityProvider.fetchWorkoutRecommendation(), // Use new workout recommendation
-      activityProvider.fetchCompletedActivities(),
+      // Completed activities fetch disabled
     ]);
   }
 
@@ -97,136 +98,27 @@ class _ActivityScreenState extends State<ActivityScreen>
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Recommendation Header Card
-                Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.primaryColor.withOpacity(0.15),
-                          AppTheme.secondaryColor.withOpacity(0.15),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.auto_awesome,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'AI-Powered Recommendation',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    workoutRec.rlAction,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.person_outline,
-                                color: AppTheme.accentColor,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  workoutRec.userSegment,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildScoreCard(
-                                'Engagement',
-                                '${(workoutRec.engagementScore * 100).toInt()}%',
-                                Icons.trending_up,
-                                AppTheme.successColor,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildScoreCard(
-                                'Motivation',
-                                'Level ${workoutRec.motivationScore}',
-                                Icons.favorite,
-                                AppTheme.errorColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 20),
-                
                 // Physical Program
                 if (workoutRec.physicalProgram != null)
                   ProgramCard(
                     title: workoutRec.physicalProgram!.name,
                     description: workoutRec.physicalProgram!.description,
-                    items: workoutRec.physicalProgram!.exercises,
+                    items: workoutRec.physicalProgram!.activityNames,
                     duration: workoutRec.physicalProgram!.duration,
                     frequency: workoutRec.physicalProgram!.frequency,
                     intensity: workoutRec.physicalProgram!.intensity,
+                    focus: workoutRec.physicalProgram!.focus.isEmpty
+                        ? null
+                        : workoutRec.physicalProgram!.focus,
                     icon: Icons.fitness_center,
                     color: AppTheme.primaryColor,
                     programType: 'physical',
+                    itemIds: workoutRec.physicalProgram!.activities
+                        .map((e) => e.id.toString())
+                        .toList(),
+                    onItemTap: (activityId) {
+                      context.push('/activity/detail/$activityId');
+                    },
                   ),
                 
                 const SizedBox(height: 16),
@@ -235,13 +127,23 @@ class _ActivityScreenState extends State<ActivityScreen>
                 if (workoutRec.mentalProgram != null)
                   ProgramCard(
                     title: workoutRec.mentalProgram!.name,
-                    description: 'Mental wellness activities',
-                    items: workoutRec.mentalProgram!.activities,
+                    description: workoutRec.mentalProgram!.description,
+                    items: workoutRec.mentalProgram!.activityNames,
                     duration: workoutRec.mentalProgram!.duration,
                     frequency: workoutRec.mentalProgram!.frequency,
+                    intensity: workoutRec.mentalProgram!.intensity,
+                    focus: workoutRec.mentalProgram!.focus.isEmpty
+                        ? null
+                        : workoutRec.mentalProgram!.focus,
                     icon: Icons.psychology,
                     color: Colors.purple,
                     programType: 'mental',
+                    itemIds: workoutRec.mentalProgram!.activities
+                        .map((e) => e.id.toString())
+                        .toList(),
+                    onItemTap: (activityId) {
+                      context.push('/activity/detail/$activityId');
+                    },
                   ),
                 
                 const SizedBox(height: 16),
@@ -290,8 +192,9 @@ class _ActivityScreenState extends State<ActivityScreen>
             );
           }
 
-          if (provider.recommendedActivities.isEmpty) {
-            return Center(
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -302,30 +205,19 @@ class _ActivityScreenState extends State<ActivityScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No recommendations yet',
+                    'No workout recommendation yet',
                     style: Theme.of(context).textTheme.headlineMedium,
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Complete your profile to get personalized recommendations',
+                    'Pull to refresh to load your physical and mental programs.',
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: provider.recommendedActivities.length,
-            itemBuilder: (context, index) {
-              final activity = provider.recommendedActivities[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: ActivityCard(activity: activity),
-              );
-            },
+            ),
           );
         },
       ),

@@ -29,6 +29,63 @@ class DioApiService {
 
   Dio get dio => _dio;
 
+  bool get _isUsingPrimaryBaseUrl => _dio.options.baseUrl == ApiConstants.baseUrl;
+
+  bool _shouldAttemptFailover(DioException err) {
+    if (!_isUsingPrimaryBaseUrl) {
+      return false;
+    }
+
+    if (err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.sendTimeout ||
+        err.type == DioExceptionType.receiveTimeout ||
+        err.type == DioExceptionType.connectionError ||
+        err.type == DioExceptionType.unknown) {
+      return true;
+    }
+
+    if (err.type == DioExceptionType.badResponse) {
+      final statusCode = err.response?.statusCode ?? 0;
+      return statusCode == 502 || statusCode == 503 || statusCode == 504;
+    }
+
+    return false;
+  }
+
+  Future<Response<dynamic>> _executeWithFailover(
+    Future<Response<dynamic>> Function() request,
+  ) async {
+    try {
+      return await request();
+    } on DioException catch (err) {
+      if (!_shouldAttemptFailover(err)) {
+        rethrow;
+      }
+
+      final previousBaseUrl = _dio.options.baseUrl;
+      DioException lastFailoverError = err;
+
+      for (final fallbackBaseUrl in ApiConstants.fallbackBaseUrls) {
+        if (fallbackBaseUrl == previousBaseUrl) {
+          continue;
+        }
+
+        try {
+          Logger.info('Primary API unavailable. Retrying with fallback: $fallbackBaseUrl');
+          _dio.options.baseUrl = fallbackBaseUrl;
+          final fallbackResponse = await request();
+          Logger.success('API failover active: ${_dio.options.baseUrl}');
+          return fallbackResponse;
+        } on DioException catch (fallbackErr) {
+          lastFailoverError = fallbackErr;
+        }
+      }
+
+      _dio.options.baseUrl = previousBaseUrl;
+      throw lastFailoverError;
+    }
+  }
+
   // GET Request
   Future<Map<String, dynamic>> get(
     String endpoint, {
@@ -36,10 +93,12 @@ class DioApiService {
     Map<String, dynamic>? queryParams,
   }) async {
     try {
-      final response = await _dio.get(
-        endpoint,
-        queryParameters: queryParams,
-        options: Options(headers: headers),
+      final response = await _executeWithFailover(
+        () => _dio.get(
+          endpoint,
+          queryParameters: queryParams,
+          options: Options(headers: headers),
+        ),
       );
       return _handleResponse(response);
     } catch (e) {
@@ -54,10 +113,12 @@ class DioApiService {
     Map<String, dynamic>? body,
   }) async {
     try {
-      final response = await _dio.post(
-        endpoint,
-        data: body,
-        options: Options(headers: headers),
+      final response = await _executeWithFailover(
+        () => _dio.post(
+          endpoint,
+          data: body,
+          options: Options(headers: headers),
+        ),
       );
       return _handleResponse(response);
     } catch (e) {
@@ -72,10 +133,12 @@ class DioApiService {
     Map<String, dynamic>? body,
   }) async {
     try {
-      final response = await _dio.put(
-        endpoint,
-        data: body,
-        options: Options(headers: headers),
+      final response = await _executeWithFailover(
+        () => _dio.put(
+          endpoint,
+          data: body,
+          options: Options(headers: headers),
+        ),
       );
       return _handleResponse(response);
     } catch (e) {
@@ -89,9 +152,11 @@ class DioApiService {
     Map<String, String>? headers,
   }) async {
     try {
-      final response = await _dio.delete(
-        endpoint,
-        options: Options(headers: headers),
+      final response = await _executeWithFailover(
+        () => _dio.delete(
+          endpoint,
+          options: Options(headers: headers),
+        ),
       );
       return _handleResponse(response);
     } catch (e) {

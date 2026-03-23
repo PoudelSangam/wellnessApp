@@ -14,7 +14,7 @@ class ActivityProvider extends ChangeNotifier {
   
   List<ActivityModel> _activities = [];
   List<ActivityModel> _recommendedActivities = [];
-  List<CompletedActivity> _completedActivities = [];
+  final List<CompletedActivity> _completedActivities = [];
   ActivityModel? _selectedActivity;
   
   // Daily recommendation data
@@ -77,7 +77,7 @@ class ActivityProvider extends ChangeNotifier {
   }
   
   // Fetch Daily Recommended Activities
-  Future<void> fetchDailyRecommendations() async {
+  Future<void> fetchDailyRecommendations({bool retryOnUnauthorized = true}) async {
     try {
       _setLoading(true);
       _errorMessage = null;
@@ -100,8 +100,14 @@ class ActivityProvider extends ChangeNotifier {
     } on DioException catch (e) {
       final apiException = e.error is ApiException ? e.error as ApiException : null;
       if (apiException?.statusCode == 401 || e.response?.statusCode == 401) {
-        await _authProvider?.refreshAccessToken();
-        await fetchDailyRecommendations();
+        if (retryOnUnauthorized) {
+          final refreshed = await _authProvider?.refreshAccessToken() ?? false;
+          if (refreshed) {
+            await fetchDailyRecommendations(retryOnUnauthorized: false);
+            return;
+          }
+        }
+        _handleError(ApiException('Session expired. Please login again.', 401));
       } else {
         _handleError(apiException ?? e);
       }
@@ -111,7 +117,7 @@ class ActivityProvider extends ChangeNotifier {
   }
   
   // Fetch Workout Recommendation (RL-adapted program)
-  Future<void> fetchWorkoutRecommendation() async {
+  Future<void> fetchWorkoutRecommendation({bool retryOnUnauthorized = true}) async {
     try {
       _setLoading(true);
       _errorMessage = null;
@@ -132,13 +138,21 @@ class ActivityProvider extends ChangeNotifier {
       }
       
       _setLoading(false);
-      Logger.success('Workout recommendation fetched: ${_workoutRecommendation!.rlAction}');
+      Logger.success(
+        'Workout recommendation fetched: ${_workoutRecommendation!.rlActionName}',
+      );
       notifyListeners();
     } on DioException catch (e) {
       final apiException = e.error is ApiException ? e.error as ApiException : null;
       if (apiException?.statusCode == 401 || e.response?.statusCode == 401) {
-        await _authProvider?.refreshAccessToken();
-        await fetchWorkoutRecommendation();
+        if (retryOnUnauthorized) {
+          final refreshed = await _authProvider?.refreshAccessToken() ?? false;
+          if (refreshed) {
+            await fetchWorkoutRecommendation(retryOnUnauthorized: false);
+            return;
+          }
+        }
+        _handleError(ApiException('Session expired. Please login again.', 401));
       } else {
         _handleError(apiException ?? e);
       }
@@ -148,7 +162,7 @@ class ActivityProvider extends ChangeNotifier {
   }
 
   // Fetch Recommended Activities
-  Future<void> fetchRecommendations() async {
+  Future<void> fetchRecommendations({bool retryOnUnauthorized = true}) async {
     try {
       _setLoading(true);
       _errorMessage = null;
@@ -165,7 +179,10 @@ class ActivityProvider extends ChangeNotifier {
         final fallback = response['fallback_program'];
         _physicalProgram = fallback['physical_program'];
         _mentalProgram = fallback['mental_program'];
-        _reminders = (fallback['reminders'] as List?)?.cast<String>();
+        _reminders = (fallback['reminders'] as List?)
+            ?.map((e) => e?.toString() ?? '')
+            .where((e) => e.isNotEmpty)
+            .toList();
       }
       
       // Extract message
@@ -186,8 +203,14 @@ class ActivityProvider extends ChangeNotifier {
     } on DioException catch (e) {
       final apiException = e.error is ApiException ? e.error as ApiException : null;
       if (apiException?.statusCode == 401 || e.response?.statusCode == 401) {
-        await _authProvider?.refreshAccessToken();
-        await fetchRecommendations();
+        if (retryOnUnauthorized) {
+          final refreshed = await _authProvider?.refreshAccessToken() ?? false;
+          if (refreshed) {
+            await fetchRecommendations(retryOnUnauthorized: false);
+            return;
+          }
+        }
+        _handleError(ApiException('Session expired. Please login again.', 401));
       } else {
         _handleError(apiException ?? e);
       }
@@ -201,13 +224,48 @@ class ActivityProvider extends ChangeNotifier {
     try {
       _setLoading(true);
       _errorMessage = null;
-      
-      final response = await _apiService.get(
-        '${ApiConstants.activityDetail}$activityId/',
-        headers: ApiConstants.getHeaders(token: _authProvider?.accessToken),
-      );
-      
-      _selectedActivity = ActivityModel.fromJson(response);
+
+      try {
+        final response = await _apiService.get(
+          '${ApiConstants.completeWorkoutActivity}$activityId/',
+          headers: ApiConstants.getHeaders(token: _authProvider?.accessToken),
+        );
+
+        final activityJson = response['activity'] is Map<String, dynamic>
+            ? response['activity'] as Map<String, dynamic>
+            : response;
+
+        _selectedActivity = ActivityModel(
+          id: (activityJson['id'] ?? activityJson['activity_id'] ?? '')
+              .toString(),
+          name: (activityJson['activity_name'] ?? activityJson['name'] ?? '')
+              .toString(),
+          description: (activityJson['description'] ?? '').toString(),
+          category: (activityJson['activity_type'] ?? 'workout').toString(),
+          duration: activityJson['duration_minutes'] ?? 0,
+          durationSeconds: activityJson['duration_seconds'] is int
+            ? activityJson['duration_seconds'] as int
+            : int.tryParse((activityJson['duration_seconds'] ?? '').toString()),
+          difficulty: (activityJson['intensity'] ?? 'Moderate').toString(),
+          benefits: const [],
+          instructions: (activityJson['instructions'] as List?)
+                  ?.map((e) => e.toString())
+                  .toList() ??
+              const [],
+          imageUrl: null,
+          videoUrl: null,
+        );
+      } on DioException catch (e) {
+        if (e.response?.statusCode != 404) {
+          rethrow;
+        }
+
+        final fallback = await _apiService.get(
+          '${ApiConstants.activityDetail}$activityId/',
+          headers: ApiConstants.getHeaders(token: _authProvider?.accessToken),
+        );
+        _selectedActivity = ActivityModel.fromJson(fallback);
+      }
       
       _setLoading(false);
       Logger.success('Activity detail fetched');
@@ -219,8 +277,8 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
   
-  // Complete Activity with Motivation
-  Future<bool> completeActivityWithMotivation(int activityId, int motivation) async {
+  // Complete Workout Activity
+  Future<bool> completeWorkoutActivity(String activityId, {int? motivation}) async {
     try {
       _setLoading(true);
       _errorMessage = null;
@@ -230,15 +288,15 @@ class ActivityProvider extends ChangeNotifier {
         headers: ApiConstants.getHeaders(token: _authProvider?.accessToken),
         body: {
           'completed': true,
-          'motivation': motivation,
+          if (motivation != null) 'motivation': motivation,
         },
       );
       
-      // Refresh recommendations after completion
-      await fetchDailyRecommendations();
+      await fetchWorkoutRecommendation();
+      // Completed activities fetch disabled
       
       _setLoading(false);
-      Logger.success('Activity completed with motivation: $motivation');
+      Logger.success('Workout activity completed: $activityId');
       return true;
     } on DioException catch (e) {
       final apiException = e.error is ApiException ? e.error as ApiException : null;
@@ -265,7 +323,7 @@ class ActivityProvider extends ChangeNotifier {
         },
       );
       
-      await fetchCompletedActivities();
+      // Completed activities fetch disabled
       
       _setLoading(false);
       Logger.success('Activity completed');
@@ -281,25 +339,10 @@ class ActivityProvider extends ChangeNotifier {
   }
   
   // Fetch Completed Activities
+  // Disabled: not calling /api/progress/history/ endpoint
   Future<void> fetchCompletedActivities() async {
-    try {
-      final response = await _apiService.get(
-        ApiConstants.progressHistory,
-        headers: ApiConstants.getHeaders(token: _authProvider?.accessToken),
-      );
-      
-      _completedActivities = (response['history'] as List)
-          .map((json) => CompletedActivity.fromJson(json))
-          .toList();
-      
-      notifyListeners();
-      Logger.success('Completed activities fetched');
-    } on DioException catch (e) {
-      final apiException = e.error is ApiException ? e.error as ApiException : null;
-      Logger.error('Fetch completed activities failed: ${apiException?.message ?? e.toString()}');
-    } catch (e) {
-      Logger.error('Fetch completed activities error: $e');
-    }
+    // No-op: fetchCompletedActivities is disabled
+    Logger.info('fetchCompletedActivities skipped (endpoint disabled)');
   }
   
   // Filter Activities by Category

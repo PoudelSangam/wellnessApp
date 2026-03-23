@@ -28,7 +28,7 @@ class DashboardProvider extends ChangeNotifier {
   }
   
   // Fetch Dashboard Data
-  Future<void> fetchDashboardData() async {
+  Future<void> fetchDashboardData({bool retryOnUnauthorized = true}) async {
     try {
       _setLoading(true);
       _errorMessage = null;
@@ -60,8 +60,14 @@ class DashboardProvider extends ChangeNotifier {
     } on DioException catch (e) {
       final apiException = e.error is ApiException ? e.error as ApiException : null;
       if (apiException?.statusCode == 401 || e.response?.statusCode == 401) {
-        await _authProvider?.refreshAccessToken();
-        await fetchDashboardData();
+        if (retryOnUnauthorized) {
+          final refreshed = await _authProvider?.refreshAccessToken() ?? false;
+          if (refreshed) {
+            await fetchDashboardData(retryOnUnauthorized: false);
+            return;
+          }
+        }
+        _handleError(ApiException('Session expired. Please login again.', 401));
       } else {
         _handleError(apiException ?? e);
       }

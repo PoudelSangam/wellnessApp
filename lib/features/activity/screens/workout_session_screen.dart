@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/activity_model.dart';
-import '../widgets/exercise_animation_widget.dart';
-import '../widgets/motivation_dialog.dart';
 import 'package:provider/provider.dart';
 import '../providers/activity_provider.dart';
+import '../widgets/motivation_dialog.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
   final ActivityModel activity;
+  final bool autoStart;
 
   const WorkoutSessionScreen({
     super.key,
     required this.activity,
+    this.autoStart = true,
   });
 
   @override
@@ -25,25 +27,47 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   int _totalSeconds = 0;
   Timer? _timer;
   bool _isPaused = false;
-  bool _isResting = false;
   bool _isStarted = false;
-  final int _restDuration = 10; // 10 seconds rest between exercises
   
   List<ExerciseStep> _exercises = [];
+
+  Future<int?> _askMotivation() async {
+    int? selectedMotivation;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => MotivationDialog(
+        onComplete: (motivation) {
+          selectedMotivation = motivation;
+        },
+      ),
+    );
+    return selectedMotivation;
+  }
 
   @override
   void initState() {
     super.initState();
     _initializeExercises();
+    if (widget.autoStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isStarted) {
+          _startWorkout();
+        }
+      });
+    }
   }
 
   void _initializeExercises() {
     // Create exercise steps from the activity
     final instructions = widget.activity.instructions ?? [];
+    final totalDurationSeconds =
+        widget.activity.durationSeconds ?? (widget.activity.duration * 60);
     
     if (instructions.isNotEmpty && instructions.length > 1) {
       // If we have multiple instructions, create exercises from them
-      final durationPerExercise = (widget.activity.duration * 60 / instructions.length).ceil();
+      final durationPerExercise =
+          (totalDurationSeconds / instructions.length).ceil();
       _exercises = instructions.asMap().entries.map((entry) {
         return ExerciseStep(
           name: instructions[entry.key].split('.').first.trim(),
@@ -54,7 +78,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     } else {
       // Create multiple sets for better workout structure
       const sets = 3;
-      final durationPerSet = (widget.activity.duration * 60 / sets).ceil();
+      final durationPerSet = (totalDurationSeconds / sets).ceil();
       _exercises = List.generate(sets, (index) {
         return ExerciseStep(
           name: '${widget.activity.name} - Set ${index + 1}',
@@ -64,15 +88,14 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       });
     }
     
-    _totalSeconds = widget.activity.duration * 60;
+    _totalSeconds = totalDurationSeconds;
     _remainingSeconds = _totalSeconds;
   }
 
   void _startWorkout() {
     setState(() {
       _isStarted = true;
-      _remainingSeconds = _exercises[_currentExerciseIndex].duration;
-      _isResting = false;
+      _remainingSeconds = _totalSeconds;
     });
     _startTimer();
   }
@@ -83,7 +106,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       _currentExerciseIndex = 0;
       _remainingSeconds = _totalSeconds;
       _isPaused = false;
-      _isResting = false;
       _isStarted = false;
     });
   }
@@ -95,44 +117,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         setState(() {
           if (_remainingSeconds > 0) {
             _remainingSeconds--;
-            _totalSeconds--;
           } else {
             _timer?.cancel();
-            if (_isResting) {
-              _currentExerciseIndex++;
-              if (_currentExerciseIndex < _exercises.length) {
-                _startExercise();
-              } else {
-                _completeWorkout();
-              }
-            } else {
-              // Exercise completed, start rest
-              if (_currentExerciseIndex < _exercises.length - 1) {
-                _startRest();
-              } else {
-                _completeWorkout();
-              }
-            }
+            _completeWorkout();
           }
         });
       }
     });
-  }
-
-  void _startExercise() {
-    setState(() {
-      _remainingSeconds = _exercises[_currentExerciseIndex].duration;
-      _isResting = false;
-    });
-    _startTimer();
-  }
-
-  void _startRest() {
-    setState(() {
-      _remainingSeconds = _restDuration;
-      _isResting = true;
-    });
-    _startTimer();
   }
 
   void _togglePause() {
@@ -141,78 +132,59 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     });
   }
 
-  void _previousExercise() {
-    if (_currentExerciseIndex > 0) {
-      _timer?.cancel();
-      setState(() {
-        _currentExerciseIndex--;
-        _startExercise();
-      });
-    }
-  }
-
-  void _nextExercise() {
+  Future<void> _leaveSessionToHome({bool forceHome = false}) async {
     _timer?.cancel();
-    setState(() {
-      _currentExerciseIndex++;
-      if (_currentExerciseIndex < _exercises.length) {
-        _startExercise();
-      } else {
-        _completeWorkout();
-      }
-    });
+
+    if (!mounted) {
+      return;
+    }
+
+    // Explicit Exit/Home actions should bypass WillPopScope and navigate home.
+    if (forceHome || _isStarted) {
+      context.go('/home');
+      return;
+    }
+
+    final popped = await Navigator.of(context).maybePop();
+    if (!popped && mounted) {
+      context.go('/home');
+    }
   }
 
   Future<void> _completeWorkout() async {
     _timer?.cancel();
-    
-    if (mounted) {
-      // Show motivation dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => MotivationDialog(
-          onComplete: (motivation) async {
-            // Try to parse activity ID as int for the new API
-            int? activityId = int.tryParse(widget.activity.id);
-            
-            if (activityId != null) {
-              final activityProvider = context.read<ActivityProvider>();
-              final success = await activityProvider.completeActivityWithMotivation(
-                activityId,
-                motivation,
-              );
 
-              if (mounted) {
-                if (success) {
-                  _showCompletionDialog(motivation);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        activityProvider.errorMessage ?? 'Failed to complete activity',
-                      ),
-                      backgroundColor: AppTheme.errorColor,
-                    ),
-                  );
-                }
-              }
-            } else {
-              // Fallback to old API if ID is not an integer
-              final activityProvider = context.read<ActivityProvider>();
-              final success = await activityProvider.completeActivity(widget.activity.id);
-              
-              if (mounted && success) {
-                _showCompletionDialog(motivation);
-              }
-            }
-          },
-        ),
-      );
+    final selectedMotivation = await _askMotivation();
+    if (!mounted || selectedMotivation == null) {
+      return;
     }
+
+    final activityProvider = context.read<ActivityProvider>();
+    final success = await activityProvider.completeWorkoutActivity(
+      widget.activity.id,
+      motivation: selectedMotivation,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (success) {
+      _showCompletionDialog();
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          activityProvider.errorMessage ?? 'Failed to complete activity',
+        ),
+        backgroundColor: AppTheme.errorColor,
+      ),
+    );
   }
 
-  void _showCompletionDialog(int motivation) {
+  void _showCompletionDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -256,22 +228,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                       color: AppTheme.successColor,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Motivation Level: $motivation',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -279,11 +235,11 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Return to activity detail
+              await _leaveSessionToHome(forceHome: true);
             },
-            child: const Text('Done'),
+            child: const Text('Home'),
           ),
         ],
       ),
@@ -303,9 +259,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Exit workout screen
+              await _leaveSessionToHome(forceHome: true);
             },
             style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
             child: const Text('Exit'),
@@ -341,13 +297,20 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         backgroundColor: Colors.white,
         appBar: AppBar(
           title: Text(widget.activity.name),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.home_outlined),
+              tooltip: 'Home',
+              onPressed: () => _leaveSessionToHome(forceHome: true),
+            ),
+          ],
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
               if (_isStarted) {
                 _exitWorkout();
               } else {
-                Navigator.of(context).pop();
+                _leaveSessionToHome();
               }
             },
           ),
@@ -434,31 +397,39 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
               ),
               const SizedBox(width: 12),
               OutlinedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => MotivationDialog(
-                      onComplete: (motivation) async {
-                        int? activityId = int.tryParse(widget.activity.id);
-                        
-                        if (activityId != null) {
-                          final provider = context.read<ActivityProvider>();
-                          await provider.completeActivityWithMotivation(activityId, motivation);
-                        } else {
-                          final provider = context.read<ActivityProvider>();
-                          await provider.completeActivity(widget.activity.id);
-                        }
-                        
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Activity completed! 🎉'),
-                              backgroundColor: AppTheme.successColor,
-                            ),
-                          );
-                          Navigator.of(context).pop();
-                        }
-                      },
+                onPressed: () async {
+                  final selectedMotivation = await _askMotivation();
+                  if (!mounted || selectedMotivation == null) {
+                    return;
+                  }
+
+                  final provider = context.read<ActivityProvider>();
+                  final success = await provider.completeWorkoutActivity(
+                    widget.activity.id,
+                    motivation: selectedMotivation,
+                  );
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Activity marked as done.'),
+                        backgroundColor: AppTheme.successColor,
+                      ),
+                    );
+                    await _leaveSessionToHome(forceHome: true);
+                    return;
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        provider.errorMessage ?? 'Failed to complete activity',
+                      ),
+                      backgroundColor: AppTheme.errorColor,
                     ),
                   );
                 },
@@ -505,7 +476,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Exercises List with Animations
+                // Exercises List
                 ...List.generate(_exercises.length, (index) {
                   final exercise = _exercises[index];
                   return Container(
@@ -572,30 +543,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                             ),
                             const SizedBox(height: 12),
                             
-                            // Exercise Animation Preview
-                            Container(
-                              height: 180,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: ExerciseAnimationWidget(
-                                exerciseName: widget.activity.name,
-                                category: widget.activity.category,
-                                duration: exercise.duration,
-                                autoPlay: false,
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 8),
                             Text(
                               exercise.description,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[700],
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -614,15 +567,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   }
 
   Widget _buildWorkoutScreen() {
-    final currentExercise = _currentExerciseIndex < _exercises.length
-        ? _exercises[_currentExerciseIndex]
-        : _exercises.last;
-
     return Column(
       children: [
         // Progress Bar
         LinearProgressIndicator(
-          value: (_currentExerciseIndex + 1) / _exercises.length,
+          value: _totalSeconds > 0
+              ? (_totalSeconds - _remainingSeconds) / _totalSeconds
+              : 0,
           backgroundColor: Colors.grey[200],
           valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.successColor),
           minHeight: 6,
@@ -641,7 +592,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: _isResting ? Colors.orange : AppTheme.primaryColor,
+                      color: AppTheme.primaryColor,
                       width: 8,
                     ),
                   ),
@@ -651,18 +602,18 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                       children: [
                         Text(
                           _formatTime(_remainingSeconds),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
-                            color: _isResting ? Colors.orange : AppTheme.primaryColor,
+                            color: AppTheme.primaryColor,
                           ),
                         ),
-                        Text(
-                          _isResting ? 'REST' : 'GO',
+                        const Text(
+                          'TOTAL TIMER',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: _isResting ? Colors.orange : AppTheme.successColor,
+                            color: AppTheme.successColor,
                           ),
                         ),
                       ],
@@ -672,134 +623,52 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
 
                 const SizedBox(height: 30),
 
-                // Current Exercise Info
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Current Exercise',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '${_currentExerciseIndex + 1}/${_exercises.length}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _isResting ? 'Take a Rest' : currentExercise.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Navigation Arrows
-                if (!_isResting)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        onPressed: _currentExerciseIndex > 0 ? _previousExercise : null,
-                        icon: const Icon(Icons.arrow_back),
-                        iconSize: 32,
-                        color: AppTheme.primaryColor,
-                      ),
-                      const SizedBox(width: 40),
-                      Text(
-                        'Exercise ${_currentExerciseIndex + 1}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 40),
-                      IconButton(
-                        onPressed: _currentExerciseIndex < _exercises.length - 1
-                            ? _nextExercise
-                            : null,
-                        icon: const Icon(Icons.arrow_forward),
-                        iconSize: 32,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ],
-                  ),
-
-                const SizedBox(height: 20),
-
-                // Animation Widget
-                if (!_isResting)
+                // Instructions
+                if (widget.activity.instructions?.isNotEmpty ?? false)
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 24),
-                    child: ExerciseAnimationWidget(
-                      exerciseName: widget.activity.name,
-                      category: widget.activity.category,
-                      duration: currentExercise.duration,
-                      autoPlay: !_isPaused,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey.shade50,
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                  )
-                else
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    padding: const EdgeInsets.all(40),
-                    child: const Column(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.free_breakfast,
-                          size: 100,
-                          color: Colors.orange,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Relax and breathe',
+                        const Text(
+                          'Instructions',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.orange,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ...widget.activity.instructions!.map(
+                          (step) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('• '),
+                                Expanded(
+                                  child: Text(
+                                    step,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[800],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                const SizedBox(height: 20),
-
-                // Exercise Description
-                if (!_isResting)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      currentExercise.description,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey[700],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                if (widget.activity.instructions?.isNotEmpty ?? false)
+                  const SizedBox(height: 20),
 
                 const SizedBox(height: 30),
 

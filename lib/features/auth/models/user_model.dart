@@ -7,6 +7,10 @@ class UserModel {
   final String? id;
   final String email;
   final String username;
+  @JsonKey(name: 'first_name')
+  final String? firstName;
+  @JsonKey(name: 'last_name')
+  final String? lastName;
   final int? age;
   final String? gender;
   final double? height;
@@ -22,6 +26,8 @@ class UserModel {
     this.id,
     required this.email,
     required this.username,
+    this.firstName,
+    this.lastName,
     this.age,
     this.gender,
     this.height,
@@ -38,11 +44,29 @@ class UserModel {
       _$UserModelFromJson(json);
   
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
+
+  String? get displayName {
+    final fullName = [firstName, lastName]
+        .where((part) => part != null && part!.trim().isNotEmpty)
+        .map((part) => part!.trim())
+        .join(' ');
+    if (fullName.isNotEmpty) {
+      return fullName;
+    }
+
+    if (username.trim().isNotEmpty) {
+      return username;
+    }
+
+    return null;
+  }
   
   UserModel copyWith({
     String? id,
     String? email,
     String? username,
+    String? firstName,
+    String? lastName,
     int? age,
     String? gender,
     double? height,
@@ -58,6 +82,8 @@ class UserModel {
       id: id ?? this.id,
       email: email ?? this.email,
       username: username ?? this.username,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       age: age ?? this.age,
       gender: gender ?? this.gender,
       height: height ?? this.height,

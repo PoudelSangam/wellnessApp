@@ -13,6 +13,10 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
+    final displayName = authProvider.preferredDisplayName;
+    final displayInitial = displayName.isNotEmpty
+        ? displayName.substring(0, 1).toUpperCase()
+      : 'U';
 
     return Scaffold(
       appBar: AppBar(
@@ -47,7 +51,7 @@ class ProfileScreen extends StatelessWidget {
                     radius: 50,
                     backgroundColor: Colors.white,
                     child: Text(
-                      user?.username.substring(0, 1).toUpperCase() ?? 'U',
+                      displayInitial,
                       style: const TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
@@ -57,7 +61,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    user?.username ?? 'User',
+                    displayName,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

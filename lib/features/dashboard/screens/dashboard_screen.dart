@@ -6,8 +6,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../notifications/providers/notification_provider.dart';
+import '../../stats/providers/stats_provider.dart';
 import '../widgets/wellness_summary_card.dart';
-import '../widgets/progress_card.dart';
 import '../widgets/recommended_activity_card.dart';
 import '../widgets/motivational_quote_card.dart';
 import '../widgets/program_card.dart';
@@ -29,12 +29,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
+    final authProvider = context.read<AuthProvider>();
     final dashboardProvider = context.read<DashboardProvider>();
     final activityProvider = context.read<ActivityProvider>();
+    final statsProvider = context.read<StatsProvider>();
     
     await Future.wait([
+      authProvider.fetchUserProfile(),
       dashboardProvider.fetchDashboardData(),
       activityProvider.fetchDailyRecommendations(), // Use new daily recommendations
+      statsProvider.fetchComprehensiveStats(period: '30days', forceRefresh: true),
     ]);
   }
 
@@ -45,7 +49,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final user = authProvider.user;
+    final displayName = authProvider.preferredDisplayName;
 
     return Scaffold(
       appBar: AppBar(
@@ -53,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Hello, ${user?.username ?? 'User'}!',
+              'Hello, $displayName!',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
             Text(
@@ -95,11 +99,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   // Wellness Summary
                   const WellnessSummaryCard(),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Progress Indicators
-                  const ProgressCard(),
                   
                   const SizedBox(height: 24),
                   

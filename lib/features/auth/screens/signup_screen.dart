@@ -15,13 +15,6 @@ class _SignupChoice {
   const _SignupChoice({required this.label, required this.value});
 }
 
-class _GoalChoice {
-  final String label;
-  final int value;
-
-  const _GoalChoice({required this.label, required this.value});
-}
-
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -64,13 +57,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _SignupChoice(label: 'High', value: 'high'),
   ];
 
-  static const List<_GoalChoice> _goalOptions = [
-    _GoalChoice(label: 'Improve Fitness', value: 0),
-    _GoalChoice(label: 'Increase Mindfulness', value: 1),
-    _GoalChoice(label: 'Lose Weight', value: 2),
-    _GoalChoice(label: 'Reduce Stress', value: 3),
-  ];
-
   final _emailController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -79,16 +65,14 @@ class _SignupScreenState extends State<SignupScreen> {
   final _sleepHoursController = TextEditingController();
   final _workHoursController = TextEditingController();
   final _screenTimeController = TextEditingController();
-  final _socialInteractionController = TextEditingController();
-  final _happinessScoreController = TextEditingController();
-  final _workoutGoalDaysController = TextEditingController();
 
   String? _selectedGender;
   String? _selectedDietType;
   String? _selectedStressLevel;
   String? _selectedMentalHealthCondition;
   String? _selectedExerciseLevel;
-  int? _selectedPrimaryGoal;
+  int? _selectedSocialInteractionScore;
+  int? _selectedHappinessScore;
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -113,9 +97,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _sleepHoursController.dispose();
     _workHoursController.dispose();
     _screenTimeController.dispose();
-    _socialInteractionController.dispose();
-    _happinessScoreController.dispose();
-    _workoutGoalDaysController.dispose();
     super.dispose();
   }
 
@@ -165,11 +146,8 @@ class _SignupScreenState extends State<SignupScreen> {
       'sleep_hours': int.tryParse(_sleepHoursController.text),
       'work_hours_per_week': int.tryParse(_workHoursController.text),
       'screen_time_per_day': int.tryParse(_screenTimeController.text),
-      'self_reported_social_interaction_score':
-          int.tryParse(_socialInteractionController.text),
-      'happiness_score': int.tryParse(_happinessScoreController.text),
-      'primary_goal': _selectedPrimaryGoal,
-      'workout_goal_days': int.tryParse(_workoutGoalDaysController.text),
+      'self_reported_social_interaction_score': _selectedSocialInteractionScore,
+      'happiness_score': _selectedHappinessScore,
     };
 
     final authProvider = context.read<AuthProvider>();
@@ -487,71 +465,39 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildNumericField(
-                          controller: _socialInteractionController,
-                          label: 'Social Interaction Score',
-                          prefixIcon: Icons.groups_outlined,
-                          validator: (value) => _validateIntegerRange(
-                            value,
-                            'Social interaction score',
-                            min: 0,
-                            max: 10,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildNumericField(
-                          controller: _happinessScoreController,
-                          label: 'Happiness Score',
-                          prefixIcon: Icons.sentiment_satisfied_alt_outlined,
-                          validator: (value) => _validateIntegerRange(
-                            value,
-                            'Happiness score',
-                            min: 0,
-                            max: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    _buildSection(
-                      context,
-                      title: 'Goals',
-                      subtitle: 'Tell the app what you want to improve.',
-                      children: [
                         DropdownButtonFormField<int>(
-                          value: _selectedPrimaryGoal,
+                          value: _selectedSocialInteractionScore,
                           decoration: const InputDecoration(
-                            labelText: 'Primary Goal',
-                            prefixIcon: Icon(Icons.flag_outlined),
+                            labelText: 'Social Interaction Score (0–10)',
+                            prefixIcon: Icon(Icons.groups_outlined),
                           ),
-                          items: _goalOptions
-                              .map(
-                                (goal) => DropdownMenuItem<int>(
-                                  value: goal.value,
-                                  child: Text(goal.label),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedPrimaryGoal = value;
-                            });
-                          },
-                          validator: (value) => Validators.validateRequired(
-                              value?.toString(), 'Primary goal'),
+                          items: List.generate(
+                            11,
+                            (i) => DropdownMenuItem(value: i, child: Text('$i')),
+                          ),
+                          onChanged: (value) => setState(
+                              () => _selectedSocialInteractionScore = value),
+                          validator: (value) => value == null
+                              ? 'Please select a social interaction score'
+                              : null,
                         ),
                         const SizedBox(height: 16),
-                        _buildNumericField(
-                          controller: _workoutGoalDaysController,
-                          label: 'Workout Goal Days',
-                          prefixIcon: Icons.calendar_month_outlined,
-                          validator: (value) => _validateIntegerRange(
-                            value,
-                            'Workout goal days',
-                            min: 0,
-                            max: 7,
+                        DropdownButtonFormField<int>(
+                          value: _selectedHappinessScore,
+                          decoration: const InputDecoration(
+                            labelText: 'Happiness Score (0–10)',
+                            prefixIcon: Icon(
+                                Icons.sentiment_satisfied_alt_outlined),
                           ),
-                          textInputAction: TextInputAction.done,
+                          items: List.generate(
+                            11,
+                            (i) => DropdownMenuItem(value: i, child: Text('$i')),
+                          ),
+                          onChanged: (value) =>
+                              setState(() => _selectedHappinessScore = value),
+                          validator: (value) => value == null
+                              ? 'Please select a happiness score'
+                              : null,
                         ),
                       ],
                     ),

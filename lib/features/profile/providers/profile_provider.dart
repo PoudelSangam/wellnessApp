@@ -22,7 +22,10 @@ class ProfileProvider extends ChangeNotifier {
   }
   
   // Update Profile
-  Future<bool> updateProfile(Map<String, dynamic> userData) async {
+  Future<bool> updateProfile(
+    Map<String, dynamic> userData, {
+    bool retryOnUnauthorized = true,
+  }) async {
     try {
       _setLoading(true);
       _errorMessage = null;
@@ -43,8 +46,17 @@ class ProfileProvider extends ChangeNotifier {
     } on DioException catch (e) {
       final apiException = e.error is ApiException ? e.error as ApiException : null;
       if (apiException?.statusCode == 401 || e.response?.statusCode == 401) {
-        await _authProvider?.refreshAccessToken();
-        return await updateProfile(userData);
+        if (retryOnUnauthorized) {
+          final refreshed = await _authProvider?.refreshAccessToken() ?? false;
+          if (refreshed) {
+            return await updateProfile(
+              userData,
+              retryOnUnauthorized: false,
+            );
+          }
+        }
+        _handleError(ApiException('Session expired. Please login again.', 401));
+        return false;
       } else {
         _handleError(apiException ?? e);
         return false;
