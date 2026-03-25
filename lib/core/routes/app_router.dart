@@ -6,6 +6,8 @@ import '../../features/auth/screens/signup_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/activity/screens/activity_screen.dart';
 import '../../features/activity/screens/activity_detail_screen.dart';
+import '../../features/activity/screens/workout_session_screen.dart';
+import '../../features/activity/providers/activity_provider.dart';
 import '../../features/stats/screens/comprehensive_stats_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
@@ -17,6 +19,7 @@ import '../../features/splash/screens/splash_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 import '../../features/journal/screens/journal_list_screen.dart';
 import '../widgets/main_navigation.dart';
+import 'package:provider/provider.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -108,6 +111,25 @@ class AppRouter {
                   builder: (context, state) {
                     final id = state.pathParameters['id']!;
                     return ActivityDetailScreen(activityId: id);
+                  },
+                ),
+                GoRoute(
+                  path: 'workout/:id',
+                  builder: (context, state) {
+                    state.pathParameters['id'];
+                    final activityProvider = context.read<ActivityProvider>();
+                    final activity = activityProvider.selectedActivity;
+                    
+                    if (activity == null) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    
+                    return WorkoutSessionScreen(
+                      activity: activity,
+                      autoStart: true,
+                    );
                   },
                 ),
               ],

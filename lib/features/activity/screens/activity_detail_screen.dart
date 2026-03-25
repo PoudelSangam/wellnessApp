@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../auth/widgets/custom_button.dart';
 import '../providers/activity_provider.dart';
-import '../widgets/motivation_dialog.dart';
-import 'workout_session_screen.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final String activityId;
@@ -35,52 +32,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     await activityProvider.fetchActivityDetail(widget.activityId);
   }
 
-  Future<void> _handleComplete() async {
-    int? selectedMotivation;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => MotivationDialog(
-        onComplete: (motivation) {
-          selectedMotivation = motivation;
-        },
-      ),
-    );
 
-    if (!mounted || selectedMotivation == null) {
-      return;
-    }
-
-    final activityProvider = context.read<ActivityProvider>();
-    final success = await activityProvider.completeWorkoutActivity(
-      widget.activityId,
-      motivation: selectedMotivation,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Activity marked as done.'),
-          backgroundColor: AppTheme.successColor,
-        ),
-      );
-      Navigator.of(context).maybePop();
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          activityProvider.errorMessage ?? 'Failed to complete activity',
-        ),
-        backgroundColor: AppTheme.errorColor,
-      ),
-    );
-  }
 
   Color _getCategoryColor(String category) {
     return AppTheme.primaryColor;
@@ -275,47 +227,36 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Start Workout Button
-                      CustomButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => WorkoutSessionScreen(
-                                activity: activity,
+                      // View Details Section - User can only see details here
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: categoryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: categoryColor,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'To start this activity, use the "Start Activity" button on the plan.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: categoryColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                          );
-                        },
-                        text: 'Start Workout',
-                        icon: Icons.play_circle_filled,
-                        backgroundColor: categoryColor,
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Quick Complete Button
-                      OutlinedButton.icon(
-                        onPressed: provider.isLoading ? null : _handleComplete,
-                        icon: provider.isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.check_circle_outline),
-                        label: const Text('Mark as Complete'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: categoryColor,
-                          side: BorderSide(color: categoryColor),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          ],
                         ),
                       ),
+
+                      const SizedBox(height: 20),
 
                       const SizedBox(height: 20),
                     ],

@@ -337,6 +337,35 @@ class ActivityProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  // Complete Individual Exercise from Workout
+  Future<void> completeExercise(int activityId) async {
+    try {
+      await _apiService.post(
+        '/api/workout/activity/$activityId/complete/',
+        body: {'completed': true},
+      );
+      Logger.success('Exercise $activityId marked as complete');
+    } catch (e) {
+      Logger.error('Failed to mark exercise as complete: $e');
+    }
+  }
+
+  // Submit Workout Feedback
+  Future<void> submitWorkoutFeedback(int programId, int motivation) async {
+    try {
+      await _apiService.post(
+        '/api/workout/programs/$programId/feedback/',
+        body: {
+          'completed': true,
+          'motivation': motivation,
+        },
+      );
+      Logger.success('Workout feedback submitted with motivation: $motivation');
+    } catch (e) {
+      Logger.error('Failed to submit workout feedback: $e');
+    }
+  }
   
   // Fetch Completed Activities
   // Disabled: not calling /api/progress/history/ endpoint

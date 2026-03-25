@@ -7,10 +7,11 @@ import '../providers/dashboard_provider.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../notifications/providers/notification_provider.dart';
 import '../../stats/providers/stats_provider.dart';
+import '../../activity/screens/workout_session_screen.dart';
 import '../widgets/wellness_summary_card.dart';
-import '../widgets/recommended_activity_card.dart';
 import '../widgets/motivational_quote_card.dart';
 import '../widgets/program_card.dart';
+import '../widgets/recommended_activity_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -243,16 +244,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             
                             const SizedBox(height: 16),
 
-                            // Recommended Activities List
-                            if (activityProvider.recommendedActivities.isNotEmpty)
-                              ...activityProvider.recommendedActivities.map((activity) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: RecommendedActivityCard(activity: activity),
-                                );
-                              }),
+                            // Today's Personalized Plan exercises
+                            if (dailyRec.recommendedActivities.isNotEmpty)
+                              ProgramCard(
+                                title: dailyRec.rlActionName,
+                                description: dailyRec.reason,
+                                items: dailyRec.recommendedActivities
+                                    .map((activity) => activity.activityName)
+                                    .toList(),
+                                duration:
+                                    '${dailyRec.recommendedActivities.fold<int>(0, (sum, activity) => sum + activity.durationMinutes)} min',
+                                frequency: 'Today',
+                                intensity: 'Personalized',
+                                icon: Icons.auto_awesome,
+                                color: AppTheme.primaryColor,
+                                programType: 'physical',
+                                itemIds: dailyRec.recommendedActivities
+                                    .map((activity) => activity.id.toString())
+                                    .toList(),
+                                onItemTap: (activityId) {
+                                  context.push('/activity/detail/$activityId');
+                                },
+                                onStartWorkout: () {
+                                  final exercises = dailyRec.recommendedActivities
+                                      .map((activity) => ExerciseStep(
+                                            id: activity.id,
+                                            name: activity.activityName,
+                                            description: activity.description,
+                                            duration: (activity.durationMinutes > 0
+                                                    ? activity.durationMinutes
+                                                    : 1) *
+                                                60,
+                                            instructions: activity.instructions
+                                                ?.split('\n')
+                                                .where((line) =>
+                                                    line.trim().isNotEmpty)
+                                                .toList(),
+                                          ))
+                                      .toList();
 
-                            if (activityProvider.recommendedActivities.isEmpty)
+                                  if (exercises.isEmpty) {
+                                    return;
+                                  }
+
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => WorkoutSessionScreen(
+                                        exercisesList: exercises,
+                                        autoStart: true,
+                                        programId: dailyRec.rlAction,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                            if (dailyRec.recommendedActivities.isEmpty)
                               Card(
                                 child: Padding(
                                   padding: const EdgeInsets.all(24.0),

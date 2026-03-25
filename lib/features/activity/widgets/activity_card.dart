@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/activity_model.dart';
+import '../providers/activity_provider.dart';
 
 class ActivityCard extends StatelessWidget {
   final ActivityModel activity;
@@ -97,6 +99,7 @@ class ActivityCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
+                          color: Colors.black,
                         ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -138,11 +141,40 @@ class ActivityCard extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                       ),
-                      const Spacer(),
-                      const Icon(
-                        Icons.arrow_forward,
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            // Fetch activity detail first
+                            final provider = context.read<ActivityProvider>();
+                            await provider.fetchActivityDetail(activity.id);
+                            
+                            if (context.mounted) {
+                              context.push('/activity/workout/${activity.id}');
+                            }
+                          },
+                          icon: const Icon(Icons.play_arrow, size: 18),
+                          label: const Text('Start Activity'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          context.push('/activity/detail/${activity.id}');
+                        },
+                        icon: const Icon(Icons.info_outline),
                         color: AppTheme.primaryColor,
-                        size: 20,
+                        tooltip: 'View Details',
                       ),
                     ],
                   ),

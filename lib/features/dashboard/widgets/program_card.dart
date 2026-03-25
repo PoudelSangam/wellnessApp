@@ -13,6 +13,7 @@ class ProgramCard extends StatefulWidget {
   final String programType; // 'physical' or 'mental'
   final List<String>? itemIds;
   final ValueChanged<String>? onItemTap;
+  final VoidCallback? onStartWorkout;
 
   const ProgramCard({
     super.key,
@@ -28,6 +29,7 @@ class ProgramCard extends StatefulWidget {
     required this.programType,
     this.itemIds,
     this.onItemTap,
+    this.onStartWorkout,
   });
 
   @override
@@ -96,6 +98,28 @@ class _ProgramCardState extends State<ProgramCard> {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
+
+            // Start Workout Button
+            if (widget.onStartWorkout != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: widget.onStartWorkout,
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Start Workout'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: widget.color,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+
+            if (widget.onStartWorkout != null)
+              const SizedBox(height: 16),
 
             // Items/Activities
             Text(

@@ -7,6 +7,7 @@ import '../providers/activity_provider.dart';
 import '../widgets/activity_card.dart';
 import '../widgets/category_chip.dart';
 import '../../dashboard/widgets/program_card.dart';
+import 'workout_session_screen.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key});
@@ -119,6 +120,31 @@ class _ActivityScreenState extends State<ActivityScreen>
                     onItemTap: (activityId) {
                       context.push('/activity/detail/$activityId');
                     },
+                    onStartWorkout: () {
+                      // Start with all program exercises directly from API
+                      if (workoutRec.physicalProgram!.activities.isNotEmpty) {
+                        // Convert RecommendedActivity to ExerciseStep
+                        final exercises = workoutRec.physicalProgram!.activities
+                            .map((activity) => ExerciseStep(
+                              id: activity.id,
+                              name: activity.name,
+                              description: activity.description,
+                              duration: activity.durationSeconds,
+                              instructions: activity.instructions,
+                            ))
+                            .toList();
+
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => WorkoutSessionScreen(
+                              exercisesList: exercises,
+                              autoStart: true,
+                              programId: workoutRec.physicalProgram!.id,
+                            ),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 
                 const SizedBox(height: 16),
@@ -143,6 +169,31 @@ class _ActivityScreenState extends State<ActivityScreen>
                         .toList(),
                     onItemTap: (activityId) {
                       context.push('/activity/detail/$activityId');
+                    },
+                    onStartWorkout: () {
+                      // Start with all program exercises directly from API
+                      if (workoutRec.mentalProgram!.activities.isNotEmpty) {
+                        // Convert RecommendedActivity to ExerciseStep
+                        final exercises = workoutRec.mentalProgram!.activities
+                            .map((activity) => ExerciseStep(
+                              id: activity.id,
+                              name: activity.name,
+                              description: activity.description,
+                              duration: activity.durationSeconds,
+                              instructions: activity.instructions,
+                            ))
+                            .toList();
+
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => WorkoutSessionScreen(
+                              exercisesList: exercises,
+                              autoStart: true,
+                              programId: workoutRec.mentalProgram!.id,
+                            ),
+                          ),
+                        );
+                      }
                     },
                   ),
                 
